@@ -31,7 +31,7 @@ import (
 	"time"
 )
 
-const version = "0.2.1"
+const version = "0.2.2"
 const defaultPort = 47321
 
 type session struct {
@@ -78,7 +78,11 @@ func main() {
 		fmt.Println(`{"ok":true,"stopped":true}`)
 	case "update":
 		s := mustSession()
-		out, err := apiPost(s, "update", nil)
+		what := "update"
+		if len(args) > 0 && args[0] == "--stash" {
+			what = "update?stash=1" // put local code changes in git's stash first
+		}
+		out, err := apiPost(s, what, nil)
 		exitOn(err)
 		os.Stdout.Write(out)
 	case "bind-code":
@@ -114,7 +118,7 @@ const helpText = `pukinotes: a cozy, local-first whiteboard for two. See AGENTS.
 
   start [--port N] [--no-open]   launch PukiNotes (keeps running; prints a JSON line)
   status | stop | bind-code      manage the running PukiNotes
-  update                         git pull main, rebuild and restart (keeps the window and agent)
+  update [--stash]               git pull main, rebuild and restart (keeps the window and agent)
   tool --list | tool NAME --json '{...}'   call an agent tool
   join CODE                      join a board from an invite code
   doctor                         check setup and connection

@@ -34,13 +34,13 @@ const pukinotesPort = 7000
 const protoVersion = 1
 
 type PeerInfo struct {
-	ID     string   `json:"id"`
-	Name   string   `json:"name"`
-	Color  string   `json:"color"`
-	Addr   string   `json:"addr"` // their tailcat server address
-	Pair   string   `json:"pair"` // shared secret for reconnecting
-	Boards []string `json:"boards"`
-	Version string  `json:"version,omitempty"` // their PukiNotes version, last time we spoke
+	ID      string   `json:"id"`
+	Name    string   `json:"name"`
+	Color   string   `json:"color"`
+	Addr    string   `json:"addr"` // their tailcat server address
+	Pair    string   `json:"pair"` // shared secret for reconnecting
+	Boards  []string `json:"boards"`
+	Version string   `json:"version,omitempty"` // their PukiNotes version, last time we spoke
 }
 
 type invite struct {
@@ -62,12 +62,12 @@ type hello struct {
 }
 
 type welcome struct {
-	T      string            `json:"t"`
-	Error  string            `json:"error,omitempty"`
-	Pair   string            `json:"pair,omitempty"`
-	Boards map[string]string `json:"boards,omitempty"` // id -> name
-	Proto  int               `json:"proto"`
-	Version string           `json:"version"`
+	T       string            `json:"t"`
+	Error   string            `json:"error,omitempty"`
+	Pair    string            `json:"pair,omitempty"`
+	Boards  map[string]string `json:"boards,omitempty"` // id -> name
+	Proto   int               `json:"proto"`
+	Version string            `json:"version"`
 }
 
 type peerConn struct {

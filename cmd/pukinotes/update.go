@@ -144,7 +144,7 @@ func (u *Updater) Check() {
 
 // Apply pulls main, builds it, and restarts into the new version.
 // If anything fails before the restart, the current version keeps running.
-func (u *Updater) Apply() {
+func (u *Updater) Apply(stash bool) {
 	if u.repo == "" {
 		return
 	}
@@ -160,8 +160,15 @@ func (u *Updater) Apply() {
 		u.set(func() { u.state, u.err = "idle", msg })
 	}
 	if st, _ := u.git("status", "--porcelain", "--untracked-files=no"); st != "" {
-		fail("the PukiNotes folder has local code changes, so I won't pull over them. Commit or discard them first (git status shows them).")
-		return
+		if !stash {
+			u.set(func() { u.state, u.dirty, u.err = "idle", true, "" })
+			return
+		}
+		// Keep the local edits safe in git's stash; `git stash list` shows them, `git stash pop` brings them back.
+		if out, err := u.git("stash", "push", "-m", "PukiNotes update "+time.Now().Format("2006-01-02 15:04")); err != nil {
+			fail("couldn't put the local changes aside: " + out)
+			return
+		}
 	}
 	old, err := u.git("rev-parse", "HEAD")
 	if err != nil {
@@ -202,7 +209,7 @@ func (u *Updater) Apply() {
 		return
 	}
 	go c.Wait()
-	u.set(func() { u.state = "restarting" })
+	u.set(func() { u.state, u.dirty = "restarting", false })
 	fmt.Fprintf(os.Stderr, "updated: restarting as pid %d\n", c.Process.Pid)
 	time.Sleep(400 * time.Millisecond)
 	u.app.Shutdown()

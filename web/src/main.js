@@ -1288,10 +1288,18 @@ function renderUpdate(){
   const n = u.behind || 0;
   row.innerHTML = (n > 0 ? `<b>Update available</b><small>${n} new change${n === 1 ? '' : 's'} on main${u.latest ? ': ' + esc(u.latest) : ''}</small>
       <small>Your boards stay as they are. PukiNotes restarts for a moment.</small>
-      <button id="updGo" ${busy || u.dirty ? 'disabled' : ''}>${busy ? 'Updating…' : 'Update now'}</button>`
-    : '') + (u.dirty && n > 0 ? '<small class="err">The PukiNotes folder has local code changes, so updating is paused.</small>' : '')
+      ${u.dirty && !busy ? `<small class="err">The PukiNotes folder has local code changes.</small>
+        <button id="updStash">Stash changes and update</button>
+        <small>Your changes are kept in git's stash (<code>git stash pop</code> brings them back).</small>`
+      : `<button id="updGo" ${busy ? 'disabled' : ''}>${busy ? 'Updating…' : 'Update now'}</button>`}`
+    : '')
     + (u.error ? `<small class="err">${esc(u.error)}</small>` : '');
   const go = $('#updGo');
   if (go) go.onclick = () => { go.disabled = true; go.textContent = 'Updating…'; send({t:'update'}); };
+  const st = $('#updStash');
+  if (st) st.onclick = () => { st.disabled = true; st.textContent = 'Updating…'; send({t:'update', code:'stash'}); };
 }
 $('#updLink').onclick = () => send({t:'checkupdate'});
+// Re-check when the menu opens, so what it shows is never stale (at most once a minute).
+let lastMenuCheck = 0;
+$('#brandBtn').addEventListener('click', () => { if (updInfo.available && Date.now() - lastMenuCheck > 60000){ lastMenuCheck = Date.now(); send({t:'checkupdate'}); } });

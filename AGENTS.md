@@ -124,7 +124,7 @@ Exact schemas: `pukinotes_*` tools describe themselves over MCP, and `go run ./c
 - **Joining a partner's board:** your human pastes the invite code into PukiNotes. If they ask you to do it, use
   `go run ./cmd/pukinotes join <code>`.
 - **Updating:** your human clicks **Update now** in the PukiNotes menu (top left), or you run
-  `go run ./cmd/pukinotes update`. It does `git pull` of `main`, builds the new version, and restarts PukiNotes on
+  `go run ./cmd/pukinotes update` (add `--stash` to set local code edits aside in `git stash` first). It does `git pull` of `main`, builds the new version, and restarts PukiNotes on
   the same port and token. The window reloads by itself and **your binding carries over**, so just keep looping.
   While it restarts (a few seconds), calls fail with "connection refused": wait 3 seconds and retry. If the new
   version doesn't build, PukiNotes rolls the pull back and keeps running the old one.

@@ -46,8 +46,8 @@ type App struct {
 	srv     *http.Server
 	stopped chan struct{}
 
-	mu      sync.Mutex
-	clients map[*uiClient]bool
+	mu           sync.Mutex
+	clients      map[*uiClient]bool
 	compactAsked map[string]time.Time
 }
 
@@ -154,7 +154,7 @@ func (a *App) handleAPI(w http.ResponseWriter, r *http.Request) {
 		a.updater.Check()
 		st := a.updater.Status()
 		if n, _ := st["behind"].(int); n > 0 && st["error"] == "" {
-			go a.updater.Apply()
+			go a.updater.Apply(r.URL.Query().Get("stash") == "1")
 			st["started"] = true
 		}
 		enc.Encode(st)
@@ -312,7 +312,7 @@ func (a *App) fromUI(c *uiClient, m Msg) {
 			}
 		}
 	case "update":
-		go a.updater.Apply()
+		go a.updater.Apply(m.Code == "stash")
 	case "checkupdate":
 		go a.updater.Check()
 	case "ping":
