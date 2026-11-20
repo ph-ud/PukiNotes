@@ -1,0 +1,8 @@
+{
+  "name": "casa-ui",
+  "private": true,
+  "type": "module",
+  "scripts": { "build": "node build.mjs" },
+  "dependencies": { "y-protocols": "1.0.6", "yjs": "13.6.27" },
+  "devDependencies": { "esbuild": "0.25.10" }
+}
