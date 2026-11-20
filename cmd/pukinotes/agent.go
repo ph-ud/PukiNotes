@@ -14,6 +14,7 @@ import (
 	"math/rand/v2"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -60,7 +61,40 @@ func newAgent(a *App) *Agent {
 		ag.bound, ag.name, ag.model, ag.boundAt, ag.lastSeen = true, name, model, time.Now(), time.Now()
 		os.Unsetenv("PUKINOTES_AGENT")
 	}
+	// ...and its unfinished requests, so the agent can carry on with the same request ids.
+	p := filepath.Join(a.home, "requests-carry.json")
+	if b, err := os.ReadFile(p); err == nil {
+		var rs []*Request
+		if json.Unmarshal(b, &rs) == nil {
+			for _, r := range rs {
+				if r.ID != "" && r.State != "answered" && time.Since(r.Created) < 24*time.Hour {
+					ag.queue = append(ag.queue, r)
+					ag.byID[r.ID] = r
+				}
+			}
+		}
+		os.Remove(p)
+	}
 	return ag
+}
+
+// saveQueue hands unfinished requests to the next copy after an update.
+func (ag *Agent) saveQueue() error {
+	ag.mu.Lock()
+	var rs []*Request
+	for _, r := range ag.queue {
+		if r.State != "answered" {
+			rs = append(rs, r)
+		}
+	}
+	ag.mu.Unlock()
+	p := filepath.Join(ag.app.home, "requests-carry.json")
+	if len(rs) == 0 {
+		os.Remove(p)
+		return nil
+	}
+	b, _ := json.Marshal(rs)
+	return os.WriteFile(p, b, 0o600)
 }
 
 // carryOver encodes the binding for the next copy after an update.

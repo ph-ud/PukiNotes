@@ -196,6 +196,10 @@ func (u *Updater) Apply(stash bool) {
 		fail(err.Error())
 		return
 	}
+	if err := u.app.agent.saveQueue(); err != nil {
+		fail("couldn't save your agent's open requests: " + err.Error())
+		return
+	}
 	logf, _ := os.OpenFile(filepath.Join(u.app.home, "pukinotes.log"), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
 	c := exec.Command(exe, "start", "--no-open", "--port", strconv.Itoa(u.app.port))
 	c.Dir = u.repo
@@ -205,6 +209,7 @@ func (u *Updater) Apply(stash bool) {
 	}
 	detach(c)
 	if err := c.Start(); err != nil {
+		os.Remove(filepath.Join(u.app.home, "requests-carry.json"))
 		fail("couldn't start the new version: " + err.Error())
 		return
 	}
