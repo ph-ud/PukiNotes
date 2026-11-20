@@ -21,16 +21,16 @@ A little house with a heart inside, and its bottom-left corner folded like a sti
 
 | | Name | Hex | Use |
 |---|---|---|---|
-| ![](https://placehold.co/24x24/d4694a/d4694a.png) | Terracotta | `#d4694a` | Brand, primary buttons, the logo tile |
-| ![](https://placehold.co/24x24/bf5a3d/bf5a3d.png) | Terracotta deep | `#bf5a3d` | Hover and pressed |
-| ![](https://placehold.co/24x24/f7ddd0/f7ddd0.png) | Blush | `#f7ddd0` | Soft highlights, selected tool |
-| ![](https://placehold.co/24x24/f7f0e6/f7f0e6.png) | Paper | `#f7f0e6` | Canvas background (with a dot grid) |
-| ![](https://placehold.co/24x24/fffaf3/fffaf3.png) | Cream | `#fffaf3` | Panels, cards, the house in the logo |
-| ![](https://placehold.co/24x24/eadfce/eadfce.png) | Line | `#eadfce` | Borders and dividers |
-| ![](https://placehold.co/24x24/3b2f2a/3b2f2a.png) | Ink | `#3b2f2a` | Text |
-| ![](https://placehold.co/24x24/8c7b6e/8c7b6e.png) | Muted | `#8c7b6e` | Secondary text, icons |
-| ![](https://placehold.co/24x24/7a9a6b/7a9a6b.png) | Sage | `#7a9a6b` | Online, saved, success |
-| ![](https://placehold.co/24x24/a26fae/a26fae.png) | Agent plum | `#a26fae` | Everything the AI agent touches (✦) |
+| <img src="assets/swatches/d4694a.svg" width="24"> | Terracotta | `#d4694a` | Brand, primary buttons, the logo tile |
+| <img src="assets/swatches/bf5a3d.svg" width="24"> | Terracotta deep | `#bf5a3d` | Hover and pressed |
+| <img src="assets/swatches/f7ddd0.svg" width="24"> | Blush | `#f7ddd0` | Soft highlights, selected tool |
+| <img src="assets/swatches/f7f0e6.svg" width="24"> | Paper | `#f7f0e6` | Canvas background (with a dot grid) |
+| <img src="assets/swatches/fffaf3.svg" width="24"> | Cream | `#fffaf3` | Panels, cards, the house in the logo |
+| <img src="assets/swatches/eadfce.svg" width="24"> | Line | `#eadfce` | Borders and dividers |
+| <img src="assets/swatches/3b2f2a.svg" width="24"> | Ink | `#3b2f2a` | Text |
+| <img src="assets/swatches/8c7b6e.svg" width="24"> | Muted | `#8c7b6e` | Secondary text, icons |
+| <img src="assets/swatches/7a9a6b.svg" width="24"> | Sage | `#7a9a6b` | Online, saved, success |
+| <img src="assets/swatches/a26fae.svg" width="24"> | Agent plum | `#a26fae` | Everything the AI agent touches (✦) |
 
 Sticky notes: butter `#fbe8a6`, peach `#f9d0b8`, mint `#d8e7c6`, lilac `#e3d7f0`, sky `#cfe4ef`.
 
