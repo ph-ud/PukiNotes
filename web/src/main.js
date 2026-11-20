@@ -573,19 +573,74 @@ function cellVal(t, r, c, depth = 0){
   if (!/^[\d+\-*/(). e]*$/i.test(ex)) return '#ERR';
   try { const v = Function('"use strict";return (' + ex + ')')(); return isFinite(v) ? v : '#ERR'; } catch(e){ return '#ERR'; }
 }
+const COL_W = 128, MIN_COL = 36, MAX_COL = 640, MIN_ROW = 24, MAX_ROW = 320;
+const colW = (t, c) => (t.colW && t.colW[c.id]) || COL_W;
+const rowH = (t, r) => (t.rowH && t.rowH[r.id]) || 0; // 0 = natural height
 function renderTable(t, el){
   const bar = document.createElement('div'); bar.className = 'tbar';
   bar.innerHTML = '<span class="grip">⋮⋮</span><input class="ttl" spellcheck="false"><span class="tmeta"></span>';
   bar.querySelector('.ttl').value = t.title || 'Table'; el.appendChild(bar);
   const tb = document.createElement('table');
-  let h = '<thead><tr><th class="rn"></th>' + t.cols.map((c, i) => `<th><span class="cl">${COLS[i]}</span><input class="hname" data-c="${i}" spellcheck="false"></th>`).join('') + '</tr></thead><tbody>';
-  t.rows.forEach((r, ri) => { h += `<tr><td class="rn">${ri + 1}</td>` + t.cols.map((c, ci) => `<td><input class="cell" data-r="${ri}" data-c="${ci}" spellcheck="false"></td>`).join('') + '</tr>'; });
+  const cw = c => `style="width:${colW(t, c)}px"`, rh = r => rowH(t, r) ? `;height:${rowH(t, r)}px` : '';
+  let h = '<thead><tr><th class="rn"></th>' + t.cols.map((c, i) => `<th><span class="cl">${COLS[i]}</span><input class="hname" data-c="${i}" spellcheck="false" ${cw(c)}><i class="cres" data-c="${i}" title="Drag to resize · double-click to fit"></i></th>`).join('') + '</tr></thead><tbody>';
+  t.rows.forEach((r, ri) => { h += `<tr data-r="${ri}"><td class="rn">${ri + 1}<i class="rres" data-r="${ri}" title="Drag to resize · double-click to reset"></i></td>` + t.cols.map((c, ci) => `<td><input class="cell" data-r="${ri}" data-c="${ci}" spellcheck="false" style="width:${colW(t, c)}px${rh(r)}"></td>`).join('') + '</tr>'; });
   h += '</tbody><tfoot><tr><td class="rn">Σ</td>' + t.cols.map((c, ci) => `<td class="tot" data-c="${ci}"></td>`).join('') + '</tr></tfoot>';
   tb.innerHTML = h; el.appendChild(tb);
   tb.querySelectorAll('.hname').forEach(inp => inp.value = t.cols[+inp.dataset.c].name);
-  el.insertAdjacentHTML('beforeend', '<div class="tadd"><button data-act="row">+ Row</button><button data-act="col">+ Column</button></div>');
+  el.insertAdjacentHTML('beforeend', '<div class="tadd"><button data-act="row">+ Row</button><button data-act="col">+ Column</button></div><i class="tres" title="Drag to make the whole table wider or narrower"></i>');
   refreshTable(t, el);
 }
+
+/* ---------- resizing columns, rows and the whole table (like a spreadsheet) ---------- */
+function setColPx(el, c, w){ el.querySelectorAll(`input.hname[data-c="${c}"], input.cell[data-c="${c}"]`).forEach(i => i.style.width = w + 'px'); }
+function setRowPx(el, r, h){ el.querySelectorAll(`input.cell[data-r="${r}"]`).forEach(i => i.style.height = h ? h + 'px' : ''); }
+function startTableResize(e, handle){
+  const el = handle.closest('[data-id]'), id = el.dataset.id, t = find(id); if (!t) return;
+  e.preventDefault(); e.stopPropagation();
+  if (selected !== id) select(id);
+  setEditing(id);
+  const x0 = e.clientX, y0 = e.clientY;
+  document.body.classList.add(handle.matches('.rres') ? 'resizing-row' : 'resizing-col');
+  let commit;
+  if (handle.matches('.cres')){
+    const c = +handle.dataset.c, col = t.cols[c], w0 = colW(t, col); let w = w0;
+    track(ev => { w = Math.round(clamp(w0 + (ev.clientX - x0)/view.z, MIN_COL, MAX_COL)); setColPx(el, c, w); },
+      () => commit(w !== w0 && {colW: {...(t.colW || {}), [col.id]: w}}));
+  } else if (handle.matches('.rres')){
+    const r = +handle.dataset.r, row = t.rows[r];
+    const h0 = rowH(t, row) || el.querySelector(`input.cell[data-r="${r}"]`)?.offsetHeight || 31; let h = h0;
+    track(ev => { h = Math.round(clamp(h0 + (ev.clientY - y0)/view.z, MIN_ROW, MAX_ROW)); setRowPx(el, r, h); },
+      () => commit(h !== h0 && {rowH: {...(t.rowH || {}), [row.id]: h}}));
+  } else { // whole table: scale every column together
+    const ws = t.cols.map(c => colW(t, c)), total = ws.reduce((a, b) => a + b, 0); let k = 1;
+    track(ev => { k = clamp((total + (ev.clientX - x0)/view.z)/total, MIN_COL/Math.min(...ws), MAX_COL/Math.max(...ws)); ws.forEach((w, c) => setColPx(el, c, Math.round(w*k))); },
+      () => commit(k !== 1 && {colW: Object.fromEntries(t.cols.map((c, i) => [c.id, Math.round(ws[i]*k)]))}));
+  }
+  commit = fields => {
+    document.body.classList.remove('resizing-row', 'resizing-col'); setEditing(null);
+    if (fields){ A.set(id, fields); logH('Resized a table'); }
+    scheduleRender();
+  };
+}
+// Double-click a column edge to fit its content; a row edge to go back to normal height.
+function fitTable(handle){
+  const el = handle.closest('[data-id]'), t = find(el.dataset.id); if (!t) return;
+  if (handle.matches('.cres')){
+    const c = +handle.dataset.c, col = t.cols[c];
+    const g = fitTable.ctx || (fitTable.ctx = document.createElement('canvas').getContext('2d'));
+    const font = getComputedStyle(el.querySelector('input.cell') || el).font; g.font = font;
+    let w = 0;
+    el.querySelectorAll(`input.hname[data-c="${c}"], input.cell[data-c="${c}"]`).forEach(i => { w = Math.max(w, g.measureText(i.value).width); });
+    w = Math.round(clamp(w + 18, MIN_COL, MAX_COL));
+    A.set(t.id, {colW: {...(t.colW || {}), [col.id]: w}});
+  } else if (handle.matches('.rres')){
+    const row = t.rows[+handle.dataset.r]; if (!t.rowH || !t.rowH[row.id]) return;
+    const rh = {...t.rowH}; delete rh[row.id]; A.set(t.id, {rowH: rh});
+  } else return;
+  logH('Resized a table'); scheduleRender();
+}
+itemsEl.addEventListener('dblclick', e => { const h = e.target.closest('.cres, .rres'); if (h){ e.stopPropagation(); e.preventDefault(); fitTable(h); } }, true);
+
 function refreshTable(t, el){
   el.querySelectorAll('.cell').forEach(inp => {
     if (inp === document.activeElement) return;
@@ -656,6 +711,8 @@ function track(onMove, onUp){
 vp.addEventListener('pointerdown', e => {
   if (!cur) return;
   lastPointer = {x: e.clientX, y: e.clientY};
+  const rz = e.button === 0 && e.target.closest('.cres, .rres, .tres');
+  if (rz && (tool === 'select' || tool === 'hand')) return startTableResize(e, rz);
   if (e.target.closest('.card') || e.target.closest('.txt[contenteditable=true]')) return;
   if (tool === 'select' && e.target.closest('.table input, .table button')){ const h = e.target.closest('[data-id]'); if (selected !== h.dataset.id) select(h.dataset.id); return; }
   if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();

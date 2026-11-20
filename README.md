@@ -35,7 +35,8 @@ go run ./cmd/pukinotes stop
 
 - **Drag empty space** to pan. **Scroll wheel** zooms. Trackpad scrolling pans, and pinching zooms.
 - **P**: draw. Pause at the end of a stroke to snap it into a line, box or circle. Hold Shift for straight lines.
-- **T**: table. Type numbers or formulas like `=SUM(C1:C4)`. Enter moves down and adds rows.
+- **T**: table. Type numbers or formulas like `=SUM(C1:C4)`. Enter moves down and adds rows. Drag a column
+  or row edge to resize it (double-click a column edge to fit), or drag the right edge to resize the whole table.
 - **N**: sticky note, **C**: comment, **L**: arrow, **I** or ⌘V: image, **E**: eraser, **V**: select.
 - **✦ AI**: your bound agent. Ask it things, then open **History** to revert anything it did.
 - ⌘Z / ⇧⌘Z: undo / redo your own changes. Delete removes the selection.
