@@ -83,7 +83,7 @@ function onMsg(m){
     case 'net': netInfo = m.data || {}; renderNet(); break;
     case 'agent': agentInfo = m.data || {}; renderBind(); break;
     case 'invite':
-      if (m.error){ $('#netText').textContent = m.error; break; }
+      if (m.error){ $('#joinErr').textContent = m.error; break; }
       if (m.b !== cur?.id) break;
       $('#inviteCode').textContent = m.code; $('#codeBox').hidden = false;
       break;
@@ -655,7 +655,7 @@ function refreshTable(t, el){
     const c = +td.dataset.c, vals = t.rows.map((_, r) => cellVal(t, r, c)).filter(v => v !== '');
     td.textContent = vals.length && vals.every(v => typeof v === 'number') ? fmt(vals.reduce((a, b) => a + b, 0)) : '';
   });
-  const m = el.querySelector('.tmeta'); if (m) m.textContent = `${t.rows.length} rows`;
+
 }
 function focusCell(id, r, c){ requestAnimationFrame(() => document.querySelector(`.item[data-id="${id}"] .cell[data-r="${r}"][data-c="${c}"]`)?.focus()); }
 itemsEl.addEventListener('focusin', e => {
@@ -968,7 +968,7 @@ addEventListener('keydown', e => {
     const it = find(selected); A.remove([selected]); if (it) logH('Removed ' + nounOf(it)); selected = null; updateStylebar(); return;
   }
   if (e.key === 'Enter' && selected && find(selected)?.type === 'sticky'){ e.preventDefault(); editSticky(selected); return; }
-  if (e.key === 'Escape'){ closeComments(); select(null); setTool('select'); closeShare(); $('#drawer').classList.remove('show'); return; }
+  if (e.key === 'Escape'){ closeComments(); select(null); setTool('select'); closeShare(); closeSettings(); $('#drawer').classList.remove('show'); return; }
   if (e.key.toLowerCase() === 'i'){ pickAt = toWorld(lastPointer.x, lastPointer.y); $('#filePick').click(); return; }
   const t = KEYS[e.key.toLowerCase()]; if (t) setTool(t);
 });
@@ -1019,13 +1019,15 @@ function markEditing(){
 
 /* =================== people, network, boards UI =================== */
 function renderPeople(){
-  const faces = [`<span class="face me" style="background:${esc(me.color)}" title="${esc(me.name)} (you): click to rename">${esc(initial(me.name))}</span>`]
-    .concat(peers.map(p => `<span class="face ${p.online ? 'online' : 'offline'}" style="background:${esc(p.color)}" title="${esc(p.name)} · ${p.online ? 'connected' : 'offline'}">${esc(initial(p.name))}</span>`));
+  const faces = [`<span class="face me" style="background:${esc(me.color)}" title="${esc(me.name)} (you)">${esc(initial(me.name))}</span>`]
+    .concat(peers.map(p => `<span class="face ${p.online ? 'online' : 'offline'}" style="background:${esc(p.color)}" title="${esc(p.name)} · ${p.online ? `here · ${p.latency_ms ?? '…'} ms` : 'away: changes sync when back'}">${esc(initial(p.name))}</span>`));
   $('#faces').innerHTML = faces.join('');
   const on = peers.filter(p => p.online);
   $('#conn').innerHTML = on.length ? `<b>${esc(on.map(p => p.name).join(' & '))} ${on.length > 1 ? 'are' : 'is'} here</b>connected · ${on[0].latency_ms ?? '…'} ms`
     : peers.length ? `<b>${esc(peers[0].name)} is away</b>changes sync when back` : `<b>Just you</b>share to invite`;
-  $('#faces .face.me')?.addEventListener('click', openShare);
+  $('#faces .face.me')?.addEventListener('click', openSettings);
+  const fm = $('#meFace'); if (fm){ fm.style.background = me.color; fm.textContent = initial(me.name); }
+  renderSwatches();
   if (cur){ cur.aw.setLocalStateField('user', me); }
   scheduleRender();
 }
@@ -1033,10 +1035,11 @@ function renderNet(){
   $('#netDot').classList.toggle('on', !!netInfo.ready);
   $('#netText').textContent = netInfo.ready ? 'Ready to connect (tailcat relay reachable)' : netInfo.error ? 'Can’t reach the relay yet: ' + netInfo.error : 'Connecting to the relay…';
   if (netInfo.ready && cur && $('#scrim').classList.contains('show') && $('#codeBox').hidden) send({t:'invite', b: cur.id});
+  $('#gearBtn').title = netInfo.ready ? 'Settings' : 'Settings · not connected to the relay yet';
 }
 function renderPeerList(){
-  $('#peerList').innerHTML = peers.length ? peers.map(p => `<div class="peerrow"><span class="face ${p.online ? 'online' : 'offline'}" style="background:${esc(p.color)};margin:0">${esc(initial(p.name))}</span><div><b>${esc(p.name)}</b><br><small>${p.online ? `connected · ${p.latency_ms ?? '…'} ms` : 'offline'} · ${p.boards?.length || 0} shared board${p.boards?.length === 1 ? '' : 's'}${p.version && appVersion && p.version !== appVersion ? ` · on v${esc(p.version)} (you have v${esc(appVersion)})` : ''}</small></div></div>`).join('')
-    : '<p class="netline">Nobody yet.</p>';
+  $('#peerList').innerHTML = peers.length ? peers.map(p => `<div class="peerrow"><span class="face ${p.online ? 'online' : 'offline'}" style="background:${esc(p.color)};margin:0">${esc(initial(p.name))}</span><div><b>${esc(p.name)}</b><br><small>${p.online ? `● ${p.latency_ms ?? '…'} ms` : '○ away'} · ${p.boards?.length || 0} 🗂${p.version && appVersion && p.version !== appVersion ? ` · on v${esc(p.version)} (you have v${esc(appVersion)})` : ''}</small></div></div>`).join('')
+    : '';
 }
 function renderBoards(){
   if (!cur) return;
@@ -1067,7 +1070,7 @@ document.addEventListener('pointerdown', e => { if (!e.target.closest('#drawer')
 
 /* ---------- share ---------- */
 function openShare(){
-  $('#scrim').classList.add('show'); $('#nameInput').value = me.name; $('#joinErr').textContent = '';
+  $('#scrim').classList.add('show'); $('#joinErr').textContent = ''; $('#shareTitle').textContent = boardName(cur);
   $('#codeBox').hidden = true; send({t:'invite', b: cur.id}); // the board's code, same every time
   renderNet(); renderPeerList();
 }
@@ -1081,7 +1084,7 @@ $('#copyBtn').onclick = () => {
   (navigator.clipboard ? navigator.clipboard.writeText(code) : Promise.reject()).catch(() => {
     const r = document.createRange(); r.selectNodeContents($('#inviteCode')); getSelection().removeAllRanges(); getSelection().addRange(r); document.execCommand('copy');
   });
-  $('#copyBtn').textContent = 'Copied ✓'; setTimeout(() => $('#copyBtn').textContent = 'Copy', 1400);
+  toast('Copied');
 };
 $('#joinBtn').onclick = () => {
   const code = $('#joinInput').value.trim(); if (!code) return;
@@ -1089,8 +1092,25 @@ $('#joinBtn').onclick = () => {
   send({t:'join', code});
 };
 $('#joinInput').addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') $('#joinBtn').click(); });
-$('#nameInput').addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') $('#nameBtn').click(); });
-$('#nameBtn').onclick = () => { const n = $('#nameInput').value.trim(); if (n){ send({t:'profile', data:{name: n, color: me.color}}); toast('Saved'); } };
+const saveName = () => { const n = $('#nameInput').value.trim(); if (n && n !== me.name) send({t:'profile', data:{name: n, color: me.color}}); };
+$('#nameInput').addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') $('#nameInput').blur(); });
+$('#nameInput').addEventListener('blur', saveName);
+/* ---------- settings ---------- */
+const MY_COLORS = ['#d4694a', '#7a9a6b', '#5b7fa6', '#c28a2c', '#b0607a', '#4f8f8a'];
+function renderSwatches(){
+  const w = $('#swatches'); if (!w) return;
+  w.innerHTML = MY_COLORS.map(c => `<button style="background:${c}" class="${c === me.color ? 'on' : ''}" data-c="${c}" title="Your color"></button>`).join('');
+  w.querySelectorAll('button').forEach(b => b.onclick = () => send({t:'profile', data:{name: me.name, color: b.dataset.c}}));
+}
+function openSettings(){
+  $('#setScrim').classList.add('show'); $('#nameInput').value = me.name; $('#verLabel').textContent = appVersion;
+  renderSwatches(); renderNet(); renderPeerList(); renderUpdate();
+  if (updInfo.available) send({t:'checkupdate'});
+}
+function closeSettings(){ $('#setScrim').classList.remove('show'); }
+$('#gearBtn').onclick = openSettings;
+$('#closeSet').onclick = closeSettings;
+$('#setScrim').addEventListener('pointerdown', e => { if (e.target.id === 'setScrim') closeSettings(); });
 
 /* =================== your agent =================== */
 const chatLog = [];
@@ -1100,10 +1120,12 @@ function renderBind(){
   const card = $('#bindCard');
   if (a.bound){
     card.className = 'bind';
-    card.innerHTML = `<i></i><div><b>${esc(a.name)}</b> is bound to PukiNotes<small>${a.listening ? 'listening for your requests' : 'not listening right now: ask it to keep serving PukiNotes'}${a.pending ? ` · ${a.pending} waiting` : ''}</small></div>`;
+    card.innerHTML = `<i></i><div><b>${esc(a.name)}</b>${a.pending ? `<small>${a.pending} waiting</small>` : ''}</div>`;
+    card.title = a.listening ? 'Listening for your requests' : 'Bound, but not listening right now';
   } else {
     card.className = 'bind off';
-    card.innerHTML = `<i></i><div><b>No agent bound yet</b><small>Tell your agent: “launch PukiNotes” (see AGENTS.md). Requests wait here until it binds.</small></div>`;
+    card.innerHTML = `<i></i><div><b>No agent yet</b><small>Tell yours: “launch PukiNotes”</small></div>`;
+    card.title = 'Requests wait here until an agent binds (see AGENTS.md)';
   }
   $('#agentDot').style.background = a.bound && a.listening ? '#5fb36b' : a.bound ? '#e0b44c' : '#c9b9a6';
   $('#claudeBtn').title = a.bound ? `${a.name} is bound` : 'No agent bound yet';
@@ -1155,12 +1177,12 @@ $('#claudeBtn').onclick = () => toggleAgent();
 $('#claudeX').onclick = () => toggleAgent(false);
 $('#askForm').addEventListener('submit', e => { e.preventDefault(); const t = $('#askInput').value.trim(); if (t){ $('#askInput').value = ''; askAgent(t); } });
 $('#askInput').addEventListener('keydown', e => e.stopPropagation());
-document.querySelectorAll('.chips button').forEach(b => b.onclick = () => askAgent(b.textContent));
+document.querySelectorAll('.chips button').forEach(b => b.onclick = () => askAgent(b.dataset.ask || b.textContent));
 document.querySelectorAll('.tabs button').forEach(b => b.onclick = () => {
   document.querySelectorAll('.tabs button').forEach(x => x.classList.toggle('on', x === b));
   $('#askPane').hidden = b.dataset.tab !== 'ask'; $('#histPane').hidden = b.dataset.tab !== 'hist';
 });
-addBubble('c', 'Hi! I’m your own AI agent, working through PukiNotes. Ask me here, or write <b>@ai</b> in any comment on the board. Everything I change lands in <b>History</b>, so you can revert it in one click.');
+
 
 function renderHistory(){
   if (!cur || !$('#claude').classList.contains('show')) return;
@@ -1324,8 +1346,7 @@ const TOOLS = {
 /* =================== little things =================== */
 let toastT;
 function toast(msg){ const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 1800); }
-$('#hintX').onclick = () => { $('#hint').remove(); ls.set('pukinotes-hint-off', true); };
-if (ls.get('pukinotes-hint-off')) $('#hint').remove();
+
 addEventListener('resize', () => renderPresence());
 setTool('select');
 connect();
@@ -1333,9 +1354,11 @@ connect();
 /* =================== updates =================== */
 function renderUpdate(){
   const u = updInfo || {}, row = $('#updRow'), link = $('#updLink');
-  $('#brandBtn').classList.toggle('has-update', u.available && u.behind > 0);
-  link.hidden = !u.available || u.state !== 'idle' || u.behind > 0;
-  link.textContent = u.checked ? 'Up to date · check again' : 'Check for updates';
+  $('#gearBtn').classList.toggle('has-update', !!(u.available && u.behind > 0));
+  link.hidden = u.behind > 0;
+  link.disabled = !u.available || u.state !== 'idle';
+  link.title = !u.available ? 'Version' : u.checked ? 'Up to date · check again' : 'Check for updates';
+  const vl = $('#verLabel'); if (vl) vl.textContent = appVersion + (u.checked && !(u.behind > 0) ? ' ✓' : '');
   if (u.state === 'restarting'){
     reloadOnReconnect = true;
     $('#connLost').textContent = 'Restarting with the new version…'; $('#connLost').classList.add('show');
@@ -1361,4 +1384,4 @@ function renderUpdate(){
 $('#updLink').onclick = () => send({t:'checkupdate'});
 // Re-check when the menu opens, so what it shows is never stale (at most once a minute).
 let lastMenuCheck = 0;
-$('#brandBtn').addEventListener('click', () => { if (updInfo.available && Date.now() - lastMenuCheck > 60000){ lastMenuCheck = Date.now(); send({t:'checkupdate'}); } });
+$('#gearBtn').addEventListener('click', () => { if (updInfo.available && Date.now() - lastMenuCheck > 60000){ lastMenuCheck = Date.now(); send({t:'checkupdate'}); } });

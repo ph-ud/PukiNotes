@@ -109,7 +109,7 @@ svg#ink{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;poi
 .face.online::after{content:"";position:absolute;right:-2px;bottom:-2px;width:10px;height:10px;border-radius:50%;background:#5fb36b;border:2px solid var(--panel)}
 .conn{font-size:12.5px;color:var(--muted);line-height:1.2}
 .conn b{color:var(--ink);display:block;font-size:13px}
-.share{background:var(--accent);color:#fff;font-weight:800;padding:9px 16px;border-radius:12px;display:flex;gap:7px;align-items:center;transition:transform .12s var(--ease),background .12s}
+.share{background:var(--accent);color:#fff;font-weight:800;padding:9px 11px;border-radius:12px;display:flex;gap:7px;align-items:center;transition:transform .12s var(--ease),background .12s}
 .share:hover{background:var(--accent-2)}
 .share:active{transform:scale(.96)}
 
@@ -119,7 +119,7 @@ svg#ink{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;poi
 .tool:active{transform:scale(.92)}
 .tool.on{background:var(--accent-soft);color:var(--accent-2)}
 .tool svg{width:22px;height:22px}
-.tool .k{position:absolute;right:5px;bottom:3px;font-size:9px;font-weight:800;color:var(--faint)}
+.tool .k{display:none}
 .tool.on .k{color:var(--accent)}
 .tsep{width:1px;margin:8px 3px;background:var(--line)}
 .tip{position:absolute;bottom:58px;left:50%;transform:translateX(-50%) translateY(4px);background:var(--ink);color:#fff;font-size:12px;font-weight:700;padding:5px 9px;border-radius:8px;white-space:nowrap;opacity:0;pointer-events:none;transition:.12s}
@@ -160,11 +160,11 @@ svg#ink{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;poi
 #updRow .err{color:#b4442c;margin-top:6px}
 #updLink[hidden]{display:none}
 #updLink{display:block;margin:6px 8px 2px;font-size:12px;color:var(--muted);text-decoration:underline;cursor:pointer;background:none;padding:0}
-#brandBtn{position:relative}
-#brandBtn .udot{position:absolute;top:2px;right:2px;width:9px;height:9px;border-radius:50%;background:var(--accent);border:2px solid #fff;display:none}
-#brandBtn.has-update .udot{display:block}
+.gear{position:relative;color:#6b5a4e}
+.gear .udot{position:absolute;top:4px;right:4px;width:9px;height:9px;border-radius:50%;background:var(--accent);border:2px solid #fff;display:none}
+.gear.has-update .udot{display:block}
 
-#drawer h4{margin:6px 8px 8px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+
 .brd{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border-radius:11px;text-align:left}
 .brd:hover{background:#f3e8da}
 .brd.on{background:var(--accent-soft)}
@@ -235,7 +235,7 @@ body.resizing-row,body.resizing-row *{cursor:row-resize!important;user-select:no
 .bind{display:flex;gap:10px;align-items:center;background:#f3ecf6;border-radius:12px;padding:9px 11px;margin-bottom:10px;font-size:13px;line-height:1.3}
 .bind i{flex:none;width:9px;height:9px;border-radius:50%;background:#5fb36b;box-shadow:0 0 0 3px #dff0e0}
 .bind small{display:block;color:var(--muted);font-size:11.5px}
-.claudebtn{font-weight:800;padding:9px 12px;border-radius:12px;color:#7d4f8a;background:#efe4f3;display:flex;gap:6px;align-items:center;transition:transform .12s var(--ease),background .12s}
+.claudebtn{font-weight:800;font-size:16px;padding:8px 11px;border-radius:12px;color:#7d4f8a;background:#efe4f3;display:flex;gap:6px;align-items:center;transition:transform .12s var(--ease),background .12s}
 .claudebtn:active{transform:scale(.96)}
 .claudebtn.on{background:#a26fae;color:#fff}
 #claude{right:16px;top:76px;bottom:78px;width:340px;display:flex;flex-direction:column;padding:14px;opacity:0;pointer-events:none;transform:translateX(12px);transition:.18s var(--ease)}
@@ -281,6 +281,50 @@ body.resizing-row,body.resizing-row *{cursor:row-resize!important;user-select:no
 #claudeCursor{position:fixed;left:0;top:0;z-index:16;pointer-events:none;opacity:0;transition:transform .35s cubic-bezier(.3,.8,.3,1),opacity .3s}
 #claudeCursor .tag{position:absolute;left:14px;top:16px;background:#a26fae;color:#fff;font-size:12px;font-weight:800;padding:2px 8px;border-radius:8px 8px 8px 2px;white-space:nowrap}
 @media (max-width:760px){ #claude{width:auto;left:16px} .conn,#hint{display:none} #toolbar{bottom:12px} .tool{width:40px;height:40px} }
+
+/* clean UI */
+.saved{padding-right:10px}
+#top-right{gap:6px}
+.faces .face{cursor:default}
+.mhead{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.mhead .mi{width:22px;height:22px;color:var(--accent)}
+.mhead h2{margin:0}
+.modal{position:relative}
+.mclose{position:absolute;top:14px;right:16px;font-size:22px;color:var(--faint);font-weight:800}
+.code .copy{display:grid;place-items:center;width:36px;height:36px;border-radius:10px;background:var(--accent-soft);color:var(--accent-2)}
+.code .copy.ghosty{background:none;color:var(--faint)}
+.code .copy.ghosty:hover{color:var(--accent-2);background:#f6ece2}
+.or{display:flex;align-items:center;gap:10px;color:var(--faint);font-size:12px;font-weight:800;margin:4px 0 12px}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+#joinBtn{font-size:16px!important;padding:8px 16px!important}
+.scrim2{position:fixed;inset:0;z-index:40;background:rgba(59,47,42,.28);display:grid;place-items:center;opacity:0;pointer-events:none;transition:.18s}
+.scrim2.show{opacity:1;pointer-events:auto}
+.scrim2 .modal{transform:translateY(10px) scale(.97);transition:.22s var(--ease)}
+.scrim2.show .modal{transform:none}
+.srow{display:flex;align-items:center;gap:10px;padding:12px 0;border-top:1px solid var(--line)}
+.srow:first-of-type{border-top:0}
+.srow #nameInput{flex:1;min-width:0;border:1.5px solid var(--line);border-radius:12px;padding:9px 12px;font:inherit;font-size:15px;font-weight:700;outline:none;background:#fff;color:var(--ink)}
+.srow #nameInput:focus{border-color:var(--accent)}
+.swatches{display:flex;gap:5px}
+.swatches button{width:20px;height:20px;border-radius:50%;box-shadow:inset 0 0 0 2px rgba(255,255,255,.7)}
+.swatches button.on{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--ink)}
+.srow.net{font-size:13px;color:var(--muted)}
+.srow.net i{width:9px;height:9px;border-radius:50%;background:#c9b9a6;flex:none}
+.srow.net i.on{background:#5fb36b}
+.srow.upd{flex-direction:column;align-items:stretch}
+#updLink{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12.5px;font-weight:700;text-decoration:none;margin:0;padding:4px 0;align-self:flex-start}
+#updLink svg{width:15px;height:15px}
+#updLink:disabled{cursor:default;opacity:1}
+#updLink:disabled svg{display:none}
+#updRow{margin:0 0 6px}
+#peerList{flex:1}
+#peerList .peerrow{display:flex;align-items:center;gap:10px;padding:4px 0}
+#peerList:empty{display:none}
+.ch-head{display:flex;align-items:center;gap:10px}
+.ch-head .bind{flex:1;margin:0}
+.tabs button{display:grid;place-items:center}
+.tabs button svg{width:17px;height:17px}
+.bub.c.intro{display:none}
 </style>
 <style>
 /* ---- additions for the real app ---- */
@@ -321,7 +365,7 @@ body.resizing-row,body.resizing-row *{cursor:row-resize!important;user-select:no
 <div id="cursors"></div>
 
 <div id="top-left" class="ui pill">
-  <button class="brand" id="brandBtn" title="Your boards"><i class="udot"></i>
+  <button class="brand" id="brandBtn" title="Your boards">
     <span class="logo"><svg width="28" height="28" viewBox="0 0 128 128" aria-hidden="true"><rect x="4" y="4" width="120" height="120" rx="30" fill="#d4694a"/>
     <path d="M64 24 L100 54 V98 a6 6 0 0 1-6 6 H46 L28 86 V54 Z" fill="#fffaf3" stroke="#fffaf3" stroke-width="6" stroke-linejoin="round"/>
     <path d="M28 86 L46 86 a0 0 0 0 1 0 0 V104 Z" fill="#f0dcc6" stroke="#f0dcc6" stroke-width="6" stroke-linejoin="round"/>
@@ -331,38 +375,36 @@ body.resizing-row,body.resizing-row *{cursor:row-resize!important;user-select:no
   </button>
   <span class="sep"></span>
   <span id="boardName" title="Double-click to rename"></span>
-  <span class="saved"><i></i><span id="savedLabel">Saved on this computer</span></span>
+  <span class="saved" title="Saved on this computer"><i></i><span id="savedLabel" hidden></span></span>
 </div>
 
 <div id="drawer" class="ui pill">
-  <h4>Your boards</h4>
   <div id="boardList"></div>
-  <button class="brd newb" id="newBoard"><span class="thumb" style="display:grid;place-items:center;background:#fff">+</span>New board</button>
-  <div id="updRow" hidden></div>
-  <button id="updLink">Check for updates</button>
+  <button class="brd newb" id="newBoard" title="New board"><span class="thumb" style="display:grid;place-items:center;background:#fff">+</span>New board</button>
 </div>
 
 <div id="top-right" class="ui pill">
   <div class="faces" id="faces"></div>
-  <div class="conn" id="conn"></div>
-  <button class="claudebtn" id="claudeBtn" title="Your agent">✦ AI <i class="bdot" id="agentDot"></i></button>
-  <button class="share" id="shareBtn"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>Share</button>
+  <div class="conn" id="conn" hidden></div>
+  <button class="claudebtn" id="claudeBtn" title="Your agent"><span class="spark">✦</span><i class="bdot" id="agentDot"></i></button>
+  <button class="share" id="shareBtn" title="Share this board"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" ><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg></button>
+  <button class="iconbtn gear" id="gearBtn" title="Settings"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" ><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><i class="udot"></i></button>
 </div>
 
 <div id="stylebar" class="ui pill"></div>
 
 <nav id="toolbar" class="ui pill">
-  <button class="tool" data-tool="select"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M5 3.5 19 11l-6.2 1.6L9.6 19z"/></svg><span class="k">V</span><span class="tip">Select &amp; move</span></button>
-  <button class="tool" data-tool="hand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12V5.5a1.5 1.5 0 0 1 3 0V11"/><path d="M11 10.5V4.5a1.5 1.5 0 0 1 3 0V11"/><path d="M14 10.5v-4a1.5 1.5 0 0 1 3 0V14a7 7 0 0 1-7 7h-.5a6 6 0 0 1-4.6-2.2L3.6 16.6a1.6 1.6 0 0 1 2.4-2.1L8 16.5V12"/></svg><span class="k">H</span><span class="tip">Pan (or hold Space)</span></button>
+  <button class="tool" data-tool="select"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M5 3.5 19 11l-6.2 1.6L9.6 19z"/></svg><span class="k">V</span><span class="tip">Select · V</span></button>
+  <button class="tool" data-tool="hand"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 12V5.5a1.5 1.5 0 0 1 3 0V11"/><path d="M11 10.5V4.5a1.5 1.5 0 0 1 3 0V11"/><path d="M14 10.5v-4a1.5 1.5 0 0 1 3 0V14a7 7 0 0 1-7 7h-.5a6 6 0 0 1-4.6-2.2L3.6 16.6a1.6 1.6 0 0 1 2.4-2.1L8 16.5V12"/></svg><span class="k">H</span><span class="tip">Pan · H</span></button>
   <span class="tsep"></span>
-  <button class="tool" data-tool="pen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 4.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/><path d="m13.5 6.5 3 3"/></svg><span class="k">P</span><span class="tip">Draw · hold still to snap shapes</span></button>
-  <button class="tool" data-tool="line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19 19 5"/><path d="M10 5h9v9"/></svg><span class="k">L</span><span class="tip">Arrow</span></button>
-  <button class="tool" data-tool="sticky"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v9l-6 6H5a1 1 0 0 1-1-1z"/><path d="M14 20v-5a1 1 0 0 1 1-1h5"/></svg><span class="k">N</span><span class="tip">Sticky note</span></button>
-  <button class="tool" data-tool="comment"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 12a8 8 0 1 1 3.3 6.5L4 20l1.3-3.6A8 8 0 0 1 4 12z"/></svg><span class="k">C</span><span class="tip">Comment (@ai asks your agent)</span></button>
-  <button class="tool" data-tool="image"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><circle cx="9" cy="10" r="1.8"/><path d="m20.5 16-5-5-9 8.5"/></svg><span class="k">I</span><span class="tip">Image (or just paste ⌘V)</span></button>
-  <button class="tool" data-tool="table"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M3.5 14.5h17M9.5 9.5v10"/></svg><span class="k">T</span><span class="tip">Table (sums &amp; formulas)</span></button>
+  <button class="tool" data-tool="pen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15.5 4.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4z"/><path d="m13.5 6.5 3 3"/></svg><span class="k">P</span><span class="tip">Draw · P</span></button>
+  <button class="tool" data-tool="line"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 19 19 5"/><path d="M10 5h9v9"/></svg><span class="k">L</span><span class="tip">Arrow · L</span></button>
+  <button class="tool" data-tool="sticky"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v9l-6 6H5a1 1 0 0 1-1-1z"/><path d="M14 20v-5a1 1 0 0 1 1-1h5"/></svg><span class="k">N</span><span class="tip">Note · N</span></button>
+  <button class="tool" data-tool="comment"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 12a8 8 0 1 1 3.3 6.5L4 20l1.3-3.6A8 8 0 0 1 4 12z"/></svg><span class="k">C</span><span class="tip">Comment · C</span></button>
+  <button class="tool" data-tool="image"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><circle cx="9" cy="10" r="1.8"/><path d="m20.5 16-5-5-9 8.5"/></svg><span class="k">I</span><span class="tip">Photo · I</span></button>
+  <button class="tool" data-tool="table"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><rect x="3.5" y="4.5" width="17" height="15" rx="2.5"/><path d="M3.5 9.5h17M3.5 14.5h17M9.5 9.5v10"/></svg><span class="k">T</span><span class="tip">Table · T</span></button>
   <span class="tsep"></span>
-  <button class="tool" data-tool="eraser"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 20-3.3-3.3a1.5 1.5 0 0 1 0-2.1L14 4.3a1.5 1.5 0 0 1 2.1 0l3.6 3.6a1.5 1.5 0 0 1 0 2.1L10 20z"/><path d="M20 20H7"/><path d="m9 9 6 6"/></svg><span class="k">E</span><span class="tip">Eraser</span></button>
+  <button class="tool" data-tool="eraser"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 20-3.3-3.3a1.5 1.5 0 0 1 0-2.1L14 4.3a1.5 1.5 0 0 1 2.1 0l3.6 3.6a1.5 1.5 0 0 1 0 2.1L10 20z"/><path d="M20 20H7"/><path d="m9 9 6 6"/></svg><span class="k">E</span><span class="tip">Eraser · E</span></button>
 </nav>
 
 <div id="zoom" class="ui pill">
@@ -371,21 +413,18 @@ body.resizing-row,body.resizing-row *{cursor:row-resize!important;user-select:no
   <button class="iconbtn" id="zIn" title="Zoom in">+</button>
 </div>
 
-<div id="hint" class="ui pill"><span>✨</span><span><b>Mouse helper:</b> pause at the end of a stroke and it snaps into a straight line, box or circle. Hold <b>Shift</b> for straight lines.</span><button class="x" id="hintX" title="Dismiss">×</button></div>
 <div id="connLost" class="ui">Reconnecting to PukiNotes…</div>
 
 <aside id="claude" class="ui pill" aria-label="Your agent">
-  <div class="ch-head"><span class="spark">✦</span><b>Your agent</b><button class="x" id="claudeX" title="Close">×</button></div>
-  <div class="bind" id="bindCard"></div>
-  <div class="tabs"><button class="on" data-tab="ask">Ask</button><button data-tab="hist">History</button></div>
+  <div class="ch-head"><span class="spark">✦</span><div class="bind" id="bindCard"></div><button class="x" id="claudeX" title="Close">×</button></div>
+  <div class="tabs"><button class="on" data-tab="ask" title="Ask">✦</button><button data-tab="hist" title="History: revert anything"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg></button></div>
   <div class="pane" id="askPane">
     <div id="chat"></div>
-    <div class="chips"><button>Make a budget table for this month</button><button>Tidy up the sticky notes</button><button>Summarize this board</button></div>
-    <form id="askForm"><input id="askInput" placeholder="Ask your agent to do something…" autocomplete="off"><button title="Send">↑</button></form>
+    <div class="chips"><button data-ask="Make a budget table for this month">💰 Budget</button><button data-ask="Tidy up the sticky notes">🧹 Tidy up</button><button data-ask="Summarize this board">📝 Summary</button></div>
+    <form id="askForm"><input id="askInput" placeholder="Ask your agent…" autocomplete="off"><button title="Send">↑</button></form>
   </div>
   <div class="pane" id="histPane" hidden>
     <ol id="histList"></ol>
-    <p class="fine">Every change is kept, whether by you, your partner or an agent. Reverting an agent's change only undoes what it touched. Your partner's @ai requests run on their own agent.</p>
   </div>
 </aside>
 <div id="toast" class="ui"></div>
@@ -393,19 +432,24 @@ body.resizing-row,body.resizing-row *{cursor:row-resize!important;user-select:no
 
 <div id="scrim">
   <div class="modal" role="dialog" aria-label="Share">
-    <h2>Share this board</h2>
-    <p>This is the board's invite code. It stays the same, so you can send it again any time. When your partner pastes it into their PukiNotes, your computers connect directly and the board stays in sync. No accounts, no cloud copy.</p>
-    <div class="netline"><i id="netDot"></i><span id="netText"></span></div>
-    <div class="code" id="codeBox" hidden><span id="inviteCode"></span><button class="copy" id="copyBtn">Copy</button></div>
-    <div class="field" id="makeInviteRow"><button id="makeInvite" class="ghost" style="flex:1;padding:10px">Make a new code (the old one stops working)</button></div>
-    <h3>Got a code?</h3>
-    <div class="field"><input id="joinInput" placeholder="Paste an invite code (pukinotes1-…)"><button id="joinBtn">Join</button></div>
+    <button class="x mclose" id="closeShare" title="Close">×</button>
+    <div class="mhead"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="mi"><path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg><h2 id="shareTitle">Share</h2></div>
+    <div class="code" id="codeBox" hidden><span id="inviteCode"></span>
+      <button class="copy" id="copyBtn" title="Copy"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" ><rect x="9" y="9" width="12" height="12" rx="2.5"/><path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1"/></svg></button>
+      <button class="copy ghosty" id="makeInvite" title="Make a new code (the old one stops working)"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" ><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button></div>
+    <div class="or"><span>or join</span></div>
+    <div class="field"><input id="joinInput" placeholder="pukinotes1-…"><button id="joinBtn" title="Join">→</button></div>
     <div class="err" id="joinErr"></div>
-    <h3>You</h3>
-    <div class="field"><input id="nameInput" maxlength="40" placeholder="Your name"><button id="nameBtn">Save</button></div>
-    <h3>Connected people</h3>
-    <div id="peerList"></div>
-    <div class="mfoot"><button class="ghost" id="closeShare">Done</button></div>
+  </div>
+</div>
+<div id="setScrim" class="scrim2">
+  <div class="modal" role="dialog" aria-label="Settings">
+    <button class="x mclose" id="closeSet" title="Close">×</button>
+    <div class="mhead"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="mi"><path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7z"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><h2>Settings</h2></div>
+    <div class="srow"><span class="face me" id="meFace"></span><input id="nameInput" maxlength="40" placeholder="Your name"><div class="swatches" id="swatches"></div></div>
+    <div class="srow"><div id="peerList"></div></div>
+    <div class="srow net"><i id="netDot"></i><span id="netText"></span></div>
+    <div class="srow upd"><div id="updRow" hidden></div><button id="updLink" title="Check for updates"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" ><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4v7h-7"/></svg><span>v<span id="verLabel"></span></span></button></div>
   </div>
 </div>
 <script src="/app.js"></script>
