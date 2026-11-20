@@ -1,3 +1,5 @@
+<img src="assets/logo.svg" width="72" alt="PukiNotes logo">
+
 # PukiNotes
 
 A cozy, local-first whiteboard for two. No accounts, no server. Boards are shared peer-to-peer over tailcat,

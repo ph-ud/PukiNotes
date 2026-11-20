@@ -31,7 +31,7 @@ import (
 	"time"
 )
 
-const version = "0.2.5"
+const version = "0.2.6"
 const defaultPort = 47321
 
 type session struct {

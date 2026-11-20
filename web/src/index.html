@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PukiNotes</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%20128%20128%22%3E%3Crect%20x%3D%224%22%20y%3D%224%22%20width%3D%22120%22%20height%3D%22120%22%20rx%3D%2230%22%20fill%3D%22%23d4694a%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M64%2024%20L100%2054%20V98%20a6%206%200%200%201-6%206%20H46%20L28%2086%20V54%20Z%22%20fill%3D%22%23fffaf3%22%20stroke%3D%22%23fffaf3%22%20stroke-width%3D%226%22%20stroke-linejoin%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M28%2086%20L46%2086%20a0%200%200%200%201%200%200%20V104%20Z%22%20fill%3D%22%23f0dcc6%22%20stroke%3D%22%23f0dcc6%22%20stroke-width%3D%226%22%20stroke-linejoin%3D%22round%22%2F%3E%0A%20%20%20%20%3Cpath%20d%3D%22M64%2088%20C50%2078%2046%2071%2046%2065%20a8.5%208.5%200%200%201%2018-4%20a8.5%208.5%200%200%201%2018%204%20C82%2071%2078%2078%2064%2088%20Z%22%20fill%3D%22%23d4694a%22%2F%3E%3C%2Fsvg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Kalam:wght@400&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
@@ -94,7 +95,7 @@ svg#ink{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;poi
 #top-left{left:16px;top:16px;display:flex;align-items:center;gap:6px;padding:6px 8px 6px 6px}
 .brand{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:11px}
 .brand:hover,.iconbtn:hover{background:#f3e8da}
-.logo{width:28px;height:28px;border-radius:9px;background:var(--accent);display:grid;place-items:center}
+.logo{width:28px;height:28px;display:grid;place-items:center}
 .brand .name{font-family:Fraunces,serif;font-weight:650;font-size:17px;letter-spacing:-.01em}
 .sep{width:1px;height:22px;background:var(--line)}
 #boardName{font-weight:700;padding:6px 8px;border-radius:9px;outline:none;min-width:40px}
@@ -321,7 +322,10 @@ body.resizing-row,body.resizing-row *{cursor:row-resize!important;user-select:no
 
 <div id="top-left" class="ui pill">
   <button class="brand" id="brandBtn" title="Your boards"><i class="udot"></i>
-    <span class="logo"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/><path d="M10 19.5v-5h4v5"/></svg></span>
+    <span class="logo"><svg width="28" height="28" viewBox="0 0 128 128" aria-hidden="true"><rect x="4" y="4" width="120" height="120" rx="30" fill="#d4694a"/>
+    <path d="M64 24 L100 54 V98 a6 6 0 0 1-6 6 H46 L28 86 V54 Z" fill="#fffaf3" stroke="#fffaf3" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M28 86 L46 86 a0 0 0 0 1 0 0 V104 Z" fill="#f0dcc6" stroke="#f0dcc6" stroke-width="6" stroke-linejoin="round"/>
+    <path d="M64 88 C50 78 46 71 46 65 a8.5 8.5 0 0 1 18-4 a8.5 8.5 0 0 1 18 4 C82 71 78 78 64 88 Z" fill="#d4694a"/></svg></span>
     <span class="name">PukiNotes</span>
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8c7b6e" stroke-width="3" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
   </button>
