@@ -284,7 +284,7 @@ func (a *App) fromUI(c *uiClient, m Msg) {
 			a.broadcast(Msg{T: "boards", Data: jsonRaw(a.boardList())}, nil)
 		}
 	case "invite":
-		code, err := a.peers.CreateInvite(m.B)
+		code, err := a.peers.CreateInvite(m.B, m.Code == "new")
 		c.send(Msg{T: "invite", B: m.B, Code: code, Error: errString(err)})
 	case "join":
 		go func() {

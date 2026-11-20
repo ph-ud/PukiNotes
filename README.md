@@ -40,7 +40,8 @@ go run ./cmd/pukinotes stop
 - **N**: sticky note, **C**: comment, **L**: arrow, **I** or ⌘V: image, **E**: eraser, **V**: select.
 - **✦ AI**: your bound agent. Ask it things, then open **History** to revert anything it did.
 - ⌘Z / ⇧⌘Z: undo / redo your own changes. Delete removes the selection.
-- **Share**: create an invite code for the board you're on, or paste your partner's code to join theirs.
+- **Share**: shows the board's invite code. It's always the same, so send it again any time; **Make a new code**
+  cancels the old one. Or paste your partner's code to join theirs.
 
 **Updating:** when there's something new on `main`, a dot appears on the PukiNotes menu (top left). Click
 **Update now**: it pulls, rebuilds and restarts in a few seconds. Your boards aren't touched.

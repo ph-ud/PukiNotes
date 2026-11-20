@@ -84,7 +84,8 @@ function onMsg(m){
     case 'agent': agentInfo = m.data || {}; renderBind(); break;
     case 'invite':
       if (m.error){ $('#netText').textContent = m.error; break; }
-      $('#inviteCode').textContent = m.code; $('#codeBox').hidden = false; $('#makeInvite').textContent = 'Create another code';
+      if (m.b !== cur?.id) break;
+      $('#inviteCode').textContent = m.code; $('#codeBox').hidden = false;
       break;
     case 'joined':
       $('#joinBtn').disabled = false; $('#joinBtn').textContent = 'Join';
@@ -1031,6 +1032,7 @@ function renderPeople(){
 function renderNet(){
   $('#netDot').classList.toggle('on', !!netInfo.ready);
   $('#netText').textContent = netInfo.ready ? 'Ready to connect (tailcat relay reachable)' : netInfo.error ? 'Can’t reach the relay yet: ' + netInfo.error : 'Connecting to the relay…';
+  if (netInfo.ready && cur && $('#scrim').classList.contains('show') && $('#codeBox').hidden) send({t:'invite', b: cur.id});
 }
 function renderPeerList(){
   $('#peerList').innerHTML = peers.length ? peers.map(p => `<div class="peerrow"><span class="face ${p.online ? 'online' : 'offline'}" style="background:${esc(p.color)};margin:0">${esc(initial(p.name))}</span><div><b>${esc(p.name)}</b><br><small>${p.online ? `connected · ${p.latency_ms ?? '…'} ms` : 'offline'} · ${p.boards?.length || 0} shared board${p.boards?.length === 1 ? '' : 's'}${p.version && appVersion && p.version !== appVersion ? ` · on v${esc(p.version)} (you have v${esc(appVersion)})` : ''}</small></div></div>`).join('')
@@ -1066,14 +1068,14 @@ document.addEventListener('pointerdown', e => { if (!e.target.closest('#drawer')
 /* ---------- share ---------- */
 function openShare(){
   $('#scrim').classList.add('show'); $('#nameInput').value = me.name; $('#joinErr').textContent = '';
-  $('#codeBox').hidden = true; $('#makeInvite').textContent = 'Create invite code for “' + boardName(cur) + '”';
+  $('#codeBox').hidden = true; send({t:'invite', b: cur.id}); // the board's code, same every time
   renderNet(); renderPeerList();
 }
 function closeShare(){ $('#scrim').classList.remove('show'); }
 $('#shareBtn').onclick = openShare;
 $('#closeShare').onclick = closeShare;
 $('#scrim').addEventListener('pointerdown', e => { if (e.target.id === 'scrim') closeShare(); });
-$('#makeInvite').onclick = () => send({t:'invite', b: cur.id});
+$('#makeInvite').onclick = () => { send({t:'invite', b: cur.id, code:'new'}); toast('New code made. The old one no longer works.'); };
 $('#copyBtn').onclick = () => {
   const code = $('#inviteCode').textContent;
   (navigator.clipboard ? navigator.clipboard.writeText(code) : Promise.reject()).catch(() => {

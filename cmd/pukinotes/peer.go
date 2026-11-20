@@ -280,7 +280,10 @@ type inviteCode struct {
 	N string `json:"n"` // inviter's name
 }
 
-func (pm *PeerManager) CreateInvite(board string) (string, error) {
+// CreateInvite returns the board's invite code. It's the same code every time
+// (it can be used again, e.g. on a second computer), until renew makes a new
+// one, which also cancels the old one.
+func (pm *PeerManager) CreateInvite(board string, renew bool) (string, error) {
 	if pm.app.store.Get(board) == nil {
 		return "", errors.New("unknown board")
 	}
@@ -289,9 +292,24 @@ func (pm *PeerManager) CreateInvite(board string) (string, error) {
 	if pm.addr == "" {
 		return "", errors.New("still connecting to the relay; try again in a few seconds")
 	}
-	secret := randHex(16)
-	pm.invites[secret] = invite{Board: board, Expires: time.Now().Add(7 * 24 * time.Hour)}
-	pm.saveLocked()
+	secret := ""
+	for sec, inv := range pm.invites {
+		if inv.Board != board {
+			continue
+		}
+		if renew || (!inv.Expires.IsZero() && time.Now().After(inv.Expires)) {
+			delete(pm.invites, sec)
+		} else if inv.Expires.IsZero() {
+			secret = sec
+		}
+	}
+	if secret == "" {
+		secret = randHex(16)
+		pm.invites[secret] = invite{Board: board} // no expiry
+		pm.saveLocked()
+	} else if renew {
+		pm.saveLocked()
+	}
 	ic := inviteCode{B: board, S: secret, A: pm.addr, N: pm.app.id.Profile().Name}
 	b, _ := json.Marshal(ic)
 	return "pukinotes1-" + base64.RawURLEncoding.EncodeToString(b), nil
@@ -423,12 +441,11 @@ func (pm *PeerManager) handleInbound(conn net.Conn) {
 	switch {
 	case h.Invite != "":
 		inv, ok := pm.invites[h.Invite]
-		if !ok || inv.Board != h.Board || time.Now().After(inv.Expires) {
+		if !ok || inv.Board != h.Board || (!inv.Expires.IsZero() && time.Now().After(inv.Expires)) {
 			pm.mu.Unlock()
-			fail("this invite code was already used or has expired; ask for a new one")
+			fail("this invite code isn't valid anymore (a new one was made, or it expired); ask for the current code")
 			return
 		}
-		delete(pm.invites, h.Invite) // single use
 		if p == nil {
 			p = &PeerInfo{ID: h.ID, Pair: randHex(24)}
 			pm.known[h.ID] = p
