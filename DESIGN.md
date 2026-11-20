@@ -4,7 +4,7 @@ A cozy, local-first infinite whiteboard for two people. No accounts, no PukiNote
 Your boards live on your computer; when you share one, the two computers talk directly
 over an encrypted tunnel (tailcat), and every edit merges live.
 
-> Status: first draft, 20 Nov 2026. The look-and-feel prototype is in `prototype/index.html`
+> Status: first draft, 20 Nov 2026. The look-and-feel prototype was retired once v0.1 shipped
 > (open it in any browser, no install needed).
 
 ---

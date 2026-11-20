@@ -22,7 +22,6 @@ To share a board, click **Share** and send your partner the code.
   The built UI is embedded, so Go is the only thing you need.
 - `web/`: UI source (Yjs + plain JS). Only needed if you change the UI.
 - `DESIGN.md`: design and architecture notes
-- `prototype/index.html`: the original look-and-feel prototype
 
 ## Starting it by hand
 

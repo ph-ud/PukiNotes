@@ -2,3 +2,4 @@ web/node_modules/
 /pukinotes
 /pukinotes.exe
 .DS_Store
+tmp/
