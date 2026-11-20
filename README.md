@@ -1,51 +1,72 @@
-<img src="assets/logo.svg" width="72" alt="PukiNotes logo">
+<p align="center">
+  <img src="assets/banner.png" alt="PukiNotes: a cozy whiteboard for two. Your own AI agent lends a hand." width="100%">
+</p>
 
-# PukiNotes
+<p align="center">
+  <b>No accounts. No server. Just the two of you, a board, and your own AI helper.</b>
+</p>
 
-A cozy, local-first whiteboard for two. No accounts, no server. Boards are shared peer-to-peer over tailcat,
-and your own AI agent is the helper inside the app.
+<p align="center">
+  <img src="assets/screenshot-board.png" alt="A PukiNotes board with sticky notes, a budget table and a comment from a partner" width="100%">
+</p>
 
-## How to start
+## What it is
 
-Point your AI agent (any of them: Claude Code, Codex, Gemini CLI, Cursor…) at this repo and say:
+PukiNotes is an infinite whiteboard for two people: plan a trip, split a budget, keep a shared list.
+
+- 🏡 **Local-first.** Your boards live on your computer, in `~/.pukinotes`.
+- 🔗 **Peer-to-peer.** Boards sync straight between your two computers over tailcat. Share one code, that's it.
+- ✦ **Bring your own agent.** Claude Code, Codex, Gemini CLI, Cursor… binds itself to PukiNotes and works on the
+  board for you. Everything it does lands in History, and you can revert it in one click.
+- ✍️ **All the cozy bits.** Sticky notes, pen with shape snapping, arrows, comments, photos, and tables with
+  formulas you can resize like a spreadsheet.
+
+## Start in one sentence
+
+Point your AI agent at this repo and say:
 
 > **launch PukiNotes**
 
-Your agent reads [`AGENTS.md`](AGENTS.md), sets things up, launches the app, and binds itself to it. From then
-on, ask it things in the ✦ AI panel, or write `@ai` in any comment on the board. That work runs in **your**
-agent's session, on your plan. Your partner's `@ai` comments go to **their** agent.
+Your agent reads [`AGENTS.md`](AGENTS.md), sets things up (Go is the only requirement), opens the app and binds
+itself to it. Then ask it things in the ✦ panel, or write `@ai` in any comment on the board. That work runs in
+**your** agent's session, on your plan. Your partner's `@ai` goes to **their** agent.
 
-To share a board, click **Share** and send your partner the code.
+<p align="center">
+  <img src="assets/screenshot-agent.png" alt="The agent panel: ask your agent, see what it did, revert it" width="100%">
+</p>
 
-## What's here
+## Using it
 
-- `AGENTS.md`: the launch and binding procedure, written for agents (`CLAUDE.md` just points to it)
-- `cmd/pukinotes/`: the app. One Go program: local web server, tailcat peer sync, and the agent tools (MCP + CLI).
-  The built UI is embedded, so Go is the only thing you need.
-- `web/`: UI source (Yjs + plain JS). Only needed if you change the UI.
-- `DESIGN.md`: design and architecture notes
+The app explains itself with icons; hover anything for a hint. The shortcuts:
 
-## Starting it by hand
+| Key | Tool | | Key | Tool |
+|---|---|---|---|---|
+| **V** | Select | | **C** | Comment |
+| **H** / drag empty space | Pan | | **I** / ⌘V | Image |
+| **P** | Pen (pause to snap a shape) | | **T** | Table (`=SUM(C1:C4)` works) |
+| **L** | Arrow | | **E** | Eraser |
+| **N** | Sticky note | | ⌘Z / ⇧⌘Z | Undo / redo |
+
+- **Share** (the orange button, top right) shows the board's code. It's always the same, so send it again any
+  time. The ↻ button makes a new one and cancels the old. Paste your partner's code below it to join theirs.
+- **Settings** (the gear) has your name and color, your partner's status, and the version. A dot on the gear
+  means an update is ready: click **Update now** and PukiNotes pulls, rebuilds and restarts in a few seconds.
+  Your boards aren't touched.
+
+## By hand
 
 ```
 go run ./cmd/pukinotes start      # opens PukiNotes in your browser
 go run ./cmd/pukinotes doctor     # checks everything
+go run ./cmd/pukinotes update     # same as Update now
 go run ./cmd/pukinotes stop
 ```
 
-## Using PukiNotes
+## What's in the repo
 
-- **Drag empty space** to pan. **Scroll wheel** zooms. Trackpad scrolling pans, and pinching zooms.
-- **P**: draw. Pause at the end of a stroke to snap it into a line, box or circle. Hold Shift for straight lines.
-- **T**: table. Type numbers or formulas like `=SUM(C1:C4)`. Enter moves down and adds rows. Drag a column
-  or row edge to resize it (double-click a column edge to fit), or drag the right edge to resize the whole table.
-- **N**: sticky note, **C**: comment, **L**: arrow, **I** or ⌘V: image, **E**: eraser, **V**: select.
-- **✦ AI**: your bound agent. Ask it things, then open **History** to revert anything it did.
-- ⌘Z / ⇧⌘Z: undo / redo your own changes. Delete removes the selection.
-- **Share**: shows the board's invite code. It's always the same, so send it again any time; **Make a new code**
-  cancels the old one. Or paste your partner's code to join theirs.
-
-**Updating:** when there's something new on `main`, a dot appears on the PukiNotes menu (top left). Click
-**Update now**: it pulls, rebuilds and restarts in a few seconds. Your boards aren't touched.
-
-Boards are saved on your computer in `~/.pukinotes`. Shared boards sync whenever both PukiNotes apps are running.
+- [`AGENTS.md`](AGENTS.md): the launch and binding procedure, written for agents (`CLAUDE.md` points to it)
+- `cmd/pukinotes/`: the app. One Go program: local web server, tailcat peer sync, and the agent tools (MCP + CLI).
+  The built UI is embedded.
+- `web/`: UI source (Yjs + plain JS). Only needed if you change the UI.
+- [`DESIGN.md`](DESIGN.md): design and architecture notes
+- [`BRAND.md`](BRAND.md): logo, colors, type and voice
