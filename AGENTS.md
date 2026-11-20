@@ -94,6 +94,9 @@ loop:
   human to do it in PukiNotes themselves; don't try to work around it.
 - **Tables:** rows are numbered from 1, columns are letters (A, B…) or the column's name. `pukinotes_create_table`
   can take the first rows directly; `pukinotes_set_cells` grows the table as needed.
+- **Photos:** for a product, find the image file's own link (it usually ends in .jpg, .png or .webp; open the
+  product page and take the `og:image` or the main `<img>` source) and pass it to `pukinotes_add_image`. If a site
+  refuses, download the file yourself and pass `path`.
 - **Answering an `@ai` comment:** just `pukinotes_reply`. PukiNotes posts your reply in that comment thread.
 - Don't touch sharing, keys or settings. Those tools don't exist for agents, on purpose.
 - Keep replies short. The humans see your changes live on the board anyway.
@@ -109,6 +112,7 @@ loop:
 | `pukinotes_list_boards` | Boards on this computer |
 | `pukinotes_read_board` | Every object as JSON: id, type, position, size, text, table cells (raw and computed), comments, authors |
 | `pukinotes_add_sticky`, `pukinotes_add_comment`, `pukinotes_add_arrow`, `pukinotes_draw_shape` | Create objects |
+| `pukinotes_add_image` | Put a photo on the board from `url` (a link to the image file itself, not the product page) or a local `path` |
 | `pukinotes_update_item`, `pukinotes_move_items`, `pukinotes_delete_items` | Change or remove objects |
 | `pukinotes_create_table`, `pukinotes_set_cells`, `pukinotes_add_rows` | Tables. Cells accept numbers, text, or formulas like `=SUM(C1:C4)` |
 | `pukinotes_history`, `pukinotes_revert_change` | Read History, or revert a change set when your human asks |

@@ -173,6 +173,8 @@ func toolDefs() []toolDef {
 			InputSchema: obj(map[string]any{"board": tBoard, "limit": tNum})},
 		{Name: "pukinotes_add_sticky", ui: true, write: true, Description: "Add a sticky note. Omit x/y to place it in free space.",
 			InputSchema: obj(map[string]any{"request_id": tReq, "board": tBoard, "text": tStr, "x": tNum, "y": tNum, "w": tNum, "color": tColor}, "request_id", "text")},
+		{Name: "pukinotes_add_image", ui: true, write: true, Description: "Put a photo on the board from a web link (url: the image file itself, e.g. a product photo's https link) or a local file (path). It's shrunk like a pasted photo. Omit x/y to place it in free space. w is the width on the board (default 300).",
+			InputSchema: obj(map[string]any{"request_id": tReq, "board": tBoard, "url": tStr, "path": tStr, "x": tNum, "y": tNum, "w": tNum}, "request_id")},
 		{Name: "pukinotes_add_comment", ui: true, write: true, Description: "Pin a comment on the board.",
 			InputSchema: obj(map[string]any{"request_id": tReq, "board": tBoard, "text": tStr, "x": tNum, "y": tNum}, "request_id", "text")},
 		{Name: "pukinotes_add_arrow", ui: true, write: true, Description: "Draw an arrow from (x1,y1) to (x2,y2).",
@@ -281,6 +283,19 @@ func (ag *Agent) Call(ctx context.Context, name string, args map[string]any) (an
 		ag.mu.Lock()
 		req = ag.byID[rid]
 		ag.mu.Unlock()
+	}
+	if name == "pukinotes_add_image" {
+		src := str("url")
+		if src == "" {
+			src = str("path")
+		}
+		data, err := loadImage(ctx, src)
+		if err != nil {
+			return nil, err
+		}
+		delete(args, "url")
+		delete(args, "path")
+		args["src"] = data
 	}
 	return ag.uiCall(ctx, name, args, req)
 }

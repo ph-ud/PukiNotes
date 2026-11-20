@@ -813,19 +813,25 @@ function downscale(file){
   return new Promise((resolve, reject) => {
     const fr = new FileReader();
     fr.onerror = reject;
-    fr.onload = () => {
-      const img = new Image();
-      img.onerror = reject;
-      img.onload = () => {
-        const max = 1600, k = Math.min(1, max/Math.max(img.width, img.height));
-        if (k === 1 && fr.result.length < 400000) return resolve({src: fr.result, w: img.width, h: img.height});
-        const c = document.createElement('canvas'); c.width = Math.round(img.width*k); c.height = Math.round(img.height*k);
-        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
-        resolve({src: c.toDataURL('image/jpeg', .85), w: c.width, h: c.height});
-      };
-      img.src = fr.result;
-    };
+    fr.onload = () => shrinkSrc(fr.result).then(resolve, reject);
     fr.readAsDataURL(file);
+  });
+}
+// Shrinks a data URL to at most 1600 px; flattens transparency onto white for JPEG.
+function shrinkSrc(src){
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onerror = () => reject(new Error('the browser could not read that image'));
+    img.onload = () => {
+      const iw = img.naturalWidth || img.width || 800, ih = img.naturalHeight || img.height || 600;
+      const max = 1600, k = Math.min(1, max/Math.max(iw, ih));
+      if (k === 1 && src.length < 400000) return resolve({src, w: iw, h: ih});
+      const c = document.createElement('canvas'); c.width = Math.round(iw*k); c.height = Math.round(ih*k);
+      const g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+      g.drawImage(img, 0, 0, c.width, c.height);
+      resolve({src: c.toDataURL('image/jpeg', .85), w: c.width, h: c.height});
+    };
+    img.src = src;
   });
 }
 async function addImageFile(file, at){
@@ -1123,6 +1129,7 @@ async function onRpc(m){
   const prev = cur;
   try {
     if (!b) throw new Error('unknown board ' + boardId);
+    if (tool === 'pukinotes_add_image') args._img = await shrinkSrc(String(args.src || ''));
     cur = b;
     const fn = TOOLS[tool]; if (!fn) throw new Error('tool not available in this PukiNotes window: ' + tool);
     if (req && TOOL_WRITES.has(tool)){
@@ -1143,7 +1150,7 @@ async function onRpc(m){
   finally { cur = prev; }
   send({t:'rpcres', id: m.id, data: result === undefined ? null : result, error});
 }
-const TOOL_WRITES = new Set(['pukinotes_add_sticky', 'pukinotes_add_comment', 'pukinotes_add_arrow', 'pukinotes_draw_shape', 'pukinotes_update_item', 'pukinotes_move_items', 'pukinotes_delete_items', 'pukinotes_create_table', 'pukinotes_set_cells', 'pukinotes_add_rows', 'pukinotes_revert_change']);
+const TOOL_WRITES = new Set(['pukinotes_add_sticky', 'pukinotes_add_image', 'pukinotes_add_comment', 'pukinotes_add_arrow', 'pukinotes_draw_shape', 'pukinotes_update_item', 'pukinotes_move_items', 'pukinotes_delete_items', 'pukinotes_create_table', 'pukinotes_set_cells', 'pukinotes_add_rows', 'pukinotes_revert_change']);
 const num = (v, d) => (typeof v === 'number' && isFinite(v)) ? v : (typeof v === 'string' && v.trim() !== '' && isFinite(+v)) ? +v : d;
 function needItem(id, type){ const it = find(String(id || '')); if (!it) throw new Error('no item with id ' + id + ' (use pukinotes_read_board)'); if (type && it.type !== type) throw new Error(`item ${id} is a ${it.type}, not a ${type}`); return it; }
 function colIndex(t, col){
@@ -1181,6 +1188,13 @@ const TOOLS = {
     const p = a.x == null || a.y == null ? freeSpot() : {x: num(a.x, 0), y: num(a.y, 0)};
     const id = A.add({type:'sticky', x: p.x, y: p.y, w: num(a.w, 220), color: a.color || STICKIES[3], rot: +(Math.random()*2 - 1).toFixed(2), text: String(a.text || '')});
     return {ok: true, id};
+  },
+  pukinotes_add_image(a){
+    const {src, w: iw, h: ih} = a._img; // prepared (decoded and shrunk) in onRpc, before the change set opens
+    const w = Math.max(40, Math.min(1200, num(a.w, 300))), h = w*ih/iw;
+    const p = a.x == null || a.y == null ? freeSpot() : {x: num(a.x, 0), y: num(a.y, 0)};
+    const id = A.add({type:'image', x: p.x, y: p.y, w, src});
+    return {ok: true, id, w: Math.round(w), h: Math.round(h)};
   },
   pukinotes_add_comment(a){
     const p = a.x == null || a.y == null ? freeSpot() : {x: num(a.x, 0), y: num(a.y, 0)};
