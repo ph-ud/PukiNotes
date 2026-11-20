@@ -35,6 +35,10 @@ let tool = 'select', selected = null, spaceDown = false, assist = true, openComm
 let inkColor = INKS[0], inkWidth = WIDTHS[1], stickyColor = STICKIES[0];
 let lastPointer = {x: innerWidth/2, y: innerHeight/2};
 let ready = false;
+let updInfo = {available:false};
+let appVersion = '';
+let reloadOnReconnect = false;
+const BOARD_SCHEMA = 1; // bump only with a migration in migrateBoard(); new optional fields don't need one
 
 /* =================== connection to the PukiNotes process =================== */
 const params = new URLSearchParams(location.search);
@@ -49,7 +53,7 @@ function send(m){
 function connect(){
   if (!token){ $('#connLost').textContent = 'Open PukiNotes from the link printed by `pukinotes start`'; $('#connLost').classList.add('show'); return; }
   ws = new WebSocket(`ws://${location.host}/ws?t=${encodeURIComponent(token)}`);
-  ws.onopen = () => { $('#connLost').classList.remove('show'); };
+  ws.onopen = () => { if (reloadOnReconnect){ location.reload(); return; } $('#connLost').classList.remove('show'); };
   ws.onmessage = e => onMsg(JSON.parse(e.data));
   ws.onclose = () => { $('#connLost').classList.add('show'); setTimeout(connect, 1000); };
 }
@@ -61,7 +65,8 @@ function onMsg(m){
       const d = m.data; me = d.me; peers = d.peers || []; agentInfo = d.agent || {}; netInfo = d.net || {};
       boardsMeta = d.boards || [];
       for (const b of boardsMeta) ensureBoard(b.id);
-      renderPeople(); renderPeerList(); renderBind(); renderNet();
+      updInfo = d.update || updInfo; appVersion = d.version || appVersion;
+      renderPeople(); renderPeerList(); renderBind(); renderNet(); renderUpdate();
       break;
     }
     case 'upd': { const b = ensureBoard(m.b); Y.applyUpdate(b.doc, b64dec(m.d), REMOTE); break; }
@@ -96,6 +101,7 @@ function onMsg(m){
         const b = ensureBoard(m.b); switchBoard(b.id); toast('Joined! The board is syncing.');
       }, 300);
       break;
+    case 'update': updInfo = m.data || {}; renderUpdate(); break;
     case 'rpc': onRpc(m); break;
     case 'reply': onReply(m); break;
     case 'reqstate': setReqState(m.id, m.text); break;
@@ -138,9 +144,18 @@ function createBoard(name){
   return b;
 }
 
+// Board content is a shared Yjs doc, so old and new versions must read each other's
+// boards. New optional fields need nothing. Renames or removals bump BOARD_SCHEMA and
+// add a step here that keeps the old fields readable by older copies.
+function migrateBoard(b){
+  const v = b.meta.get('schema') || 1;
+  if (v > BOARD_SCHEMA){ setTimeout(() => toast('This board was saved by a newer PukiNotes. Update from the PukiNotes menu.'), 600); return; }
+  if (v < BOARD_SCHEMA) b.doc.transact(() => b.meta.set('schema', BOARD_SCHEMA), LOCAL);
+}
 function switchBoard(id){
   if (cur){ ls.set('pukinotes-view-' + cur.id, view); cur.aw.setLocalState(null); }
   cur = ensureBoard(id);
+  migrateBoard(cur);
   ls.set('pukinotes-current', id);
   view = ls.get('pukinotes-view-' + id) || {x: innerWidth/2 - 300, y: 180, z: 1};
   selected = null; openComment = null;
@@ -955,7 +970,7 @@ function renderNet(){
   $('#netText').textContent = netInfo.ready ? 'Ready to connect (tailcat relay reachable)' : netInfo.error ? 'Can’t reach the relay yet: ' + netInfo.error : 'Connecting to the relay…';
 }
 function renderPeerList(){
-  $('#peerList').innerHTML = peers.length ? peers.map(p => `<div class="peerrow"><span class="face ${p.online ? 'online' : 'offline'}" style="background:${esc(p.color)};margin:0">${esc(initial(p.name))}</span><div><b>${esc(p.name)}</b><br><small>${p.online ? `connected · ${p.latency_ms ?? '…'} ms` : 'offline'} · ${p.boards?.length || 0} shared board${p.boards?.length === 1 ? '' : 's'}</small></div></div>`).join('')
+  $('#peerList').innerHTML = peers.length ? peers.map(p => `<div class="peerrow"><span class="face ${p.online ? 'online' : 'offline'}" style="background:${esc(p.color)};margin:0">${esc(initial(p.name))}</span><div><b>${esc(p.name)}</b><br><small>${p.online ? `connected · ${p.latency_ms ?? '…'} ms` : 'offline'} · ${p.boards?.length || 0} shared board${p.boards?.length === 1 ? '' : 's'}${p.version && appVersion && p.version !== appVersion ? ` · on v${esc(p.version)} (you have v${esc(appVersion)})` : ''}</small></div></div>`).join('')
     : '<p class="netline">Nobody yet.</p>';
 }
 function renderBoards(){
@@ -965,7 +980,7 @@ function renderBoards(){
   $('#boardList').innerHTML = list.map(b => {
     const notes = []; b.items.forEach(m => { if (m.get('type') === 'sticky' && notes.length < 3) notes.push(m.get('color')); });
     const shared = (boardsMeta.find(x => x.id === b.id)?.shared_with || []).length;
-    return `<button class="brd ${b === cur ? 'on' : ''}" data-b="${b.id}"><span class="thumb">${notes.map((c, i) => `<i style="background:${esc(c)};left:${4 + i*9}px;top:${5 + (i%2)*7}px"></i>`).join('')}</span><span><b>${esc(boardName(b))}</b><small>${b.items.size} things${shared ? ' · shared' : ''}</small></span></button>`;
+    return `<button class="brd ${b === cur ? 'on' : ''}" data-b="${b.id}"><span class="thumb">${notes.map((c, i) => `<i style="background:${esc(c)};left:${4 + i*9}px;top:${5 + (i%2)*7}px"></i>`).join('')}</span><span><b>${esc(boardName(b))}</b><small>${b.items.size} ${b.items.size === 1 ? "thing" : "things"}${shared ? ' · shared' : ''}</small></span></button>`;
   }).join('');
 }
 $('#brandBtn').onclick = () => $('#drawer').classList.toggle('show');
@@ -1241,3 +1256,28 @@ if (ls.get('pukinotes-hint-off')) $('#hint').remove();
 addEventListener('resize', () => renderPresence());
 setTool('select');
 connect();
+
+/* =================== updates =================== */
+function renderUpdate(){
+  const u = updInfo || {}, row = $('#updRow'), link = $('#updLink');
+  $('#brandBtn').classList.toggle('has-update', u.available && u.behind > 0);
+  link.hidden = !u.available || u.state !== 'idle' || u.behind > 0;
+  link.textContent = u.checked ? 'Up to date · check again' : 'Check for updates';
+  if (u.state === 'restarting'){
+    reloadOnReconnect = true;
+    $('#connLost').textContent = 'Restarting with the new version…'; $('#connLost').classList.add('show');
+  }
+  const busy = u.state === 'updating' || u.state === 'restarting';
+  if (!u.available || (!(u.behind > 0) && !u.error && !busy && u.state !== 'checking')){ row.hidden = true; return; }
+  row.hidden = false;
+  if (u.state === 'checking'){ row.innerHTML = '<b>Checking for updates…</b>'; return; }
+  const n = u.behind || 0;
+  row.innerHTML = (n > 0 ? `<b>Update available</b><small>${n} new change${n === 1 ? '' : 's'} on main${u.latest ? ': ' + esc(u.latest) : ''}</small>
+      <small>Your boards stay as they are. PukiNotes restarts for a moment.</small>
+      <button id="updGo" ${busy || u.dirty ? 'disabled' : ''}>${busy ? 'Updating…' : 'Update now'}</button>`
+    : '') + (u.dirty && n > 0 ? '<small class="err">The PukiNotes folder has local code changes, so updating is paused.</small>' : '')
+    + (u.error ? `<small class="err">${esc(u.error)}</small>` : '');
+  const go = $('#updGo');
+  if (go) go.onclick = () => { go.disabled = true; go.textContent = 'Updating…'; send({t:'update'}); };
+}
+$('#updLink').onclick = () => send({t:'checkupdate'});

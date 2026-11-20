@@ -41,4 +41,7 @@ go run ./cmd/pukinotes stop
 - ⌘Z / ⇧⌘Z: undo / redo your own changes. Delete removes the selection.
 - **Share**: create an invite code for the board you're on, or paste your partner's code to join theirs.
 
+**Updating:** when there's something new on `main`, a dot appears on the PukiNotes menu (top left). Click
+**Update now**: it pulls, rebuilds and restarts in a few seconds. Your boards aren't touched.
+
 Boards are saved on your computer in `~/.pukinotes`. Shared boards sync whenever both PukiNotes apps are running.

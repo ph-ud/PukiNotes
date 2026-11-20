@@ -6,6 +6,7 @@
 //	go run ./cmd/pukinotes tool NAME --json '{...}'   call an agent tool (or: tool --list)
 //	go run ./cmd/pukinotes join CODE  join a board from an invite code
 //	go run ./cmd/pukinotes bind-code  print a fresh bind code
+//	go run ./cmd/pukinotes update     pull main, rebuild, restart in place
 //	go run ./cmd/pukinotes doctor     check the setup and the connection
 //	go run ./cmd/pukinotes setup      rebuild the UI from web/ (optional; a built UI is included)
 package main
@@ -30,7 +31,7 @@ import (
 	"time"
 )
 
-const version = "0.1.0"
+const version = "0.2.0"
 const defaultPort = 47321
 
 type session struct {
@@ -75,6 +76,11 @@ func main() {
 		_, err := apiPost(s, "shutdown", nil)
 		exitOn(err)
 		fmt.Println(`{"ok":true,"stopped":true}`)
+	case "update":
+		s := mustSession()
+		out, err := apiPost(s, "update", nil)
+		exitOn(err)
+		os.Stdout.Write(out)
 	case "bind-code":
 		s := mustSession()
 		out, err := apiGet(s, "bindcode")
@@ -108,6 +114,7 @@ const helpText = `pukinotes: a cozy, local-first whiteboard for two. See AGENTS.
 
   start [--port N] [--no-open]   launch PukiNotes (keeps running; prints a JSON line)
   status | stop | bind-code      manage the running PukiNotes
+  update                         git pull main, rebuild and restart (keeps the window and agent)
   tool --list | tool NAME --json '{...}'   call an agent tool
   join CODE                      join a board from an invite code
   doctor                         check setup and connection
@@ -212,9 +219,11 @@ func cmdStart(args []string) {
 	}
 	home := pukinotesHome()
 	exitOn(os.MkdirAll(home, 0o700))
+	exitOn(ensureDataFormat(home))
+	afterUpdate := os.Getenv("PUKINOTES_WAIT_PORT") != ""
 
 	// Already running? Print its session and leave it alone.
-	if s, err := readSession(); err == nil {
+	if s, err := readSession(); err == nil && !afterUpdate {
 		if _, err := apiGet(s, "status"); err == nil {
 			if b, err := apiGet(s, "bindcode"); err == nil {
 				var bc struct {
@@ -233,6 +242,10 @@ func cmdStart(args []string) {
 	}
 
 	ln, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", *port))
+	for i := 0; err != nil && afterUpdate && i < 150; i++ { // the old copy is still letting go of the port
+		time.Sleep(100 * time.Millisecond)
+		ln, err = net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", *port))
+	}
 	if err != nil {
 		exitOn(fmt.Errorf("port %d is busy (another app?). Try: pukinotes start --port %d", *port, *port+1))
 	}
@@ -240,10 +253,18 @@ func cmdStart(args []string) {
 	exitOn(err)
 	store, err := OpenStore(filepath.Join(home, "boards"))
 	exitOn(err)
-	a := &App{home: home, port: *port, token: randHex(16), id: id, cfg: loadConfig(home), store: store,
+	token := randHex(16)
+	if t := os.Getenv("PUKINOTES_TOKEN"); len(t) == 32 { // keep the open window working after an update
+		token = t
+	}
+	os.Unsetenv("PUKINOTES_TOKEN")
+	os.Unsetenv("PUKINOTES_WAIT_PORT")
+	a := &App{home: home, port: *port, token: token, id: id, cfg: loadConfig(home), store: store,
 		clients: map[*uiClient]bool{}, compactAsked: map[string]time.Time{}, stopped: make(chan struct{})}
 	a.peers = newPeerManager(a)
 	a.agent = newAgent(a)
+	a.updater = newUpdater(a)
+	go a.updater.Loop()
 	reg, err := devDERPRegion()
 	exitOn(err)
 	a.peers.region = reg
@@ -269,7 +290,9 @@ func cmdStart(args []string) {
 		go func() { time.Sleep(300 * time.Millisecond); openBrowser(s.URL) }()
 	}
 	err = a.Serve(ln)
-	os.Remove(filepath.Join(home, "session.json"))
+	if s, e := readSession(); e == nil && s.PID == os.Getpid() { // after an update it belongs to the new copy
+		os.Remove(filepath.Join(home, "session.json"))
+	}
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatal(err)
 	}

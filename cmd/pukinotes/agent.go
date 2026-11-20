@@ -13,6 +13,8 @@ import (
 	"fmt"
 	"math/rand/v2"
 	"net/http"
+	"os"
+	"strings"
 	"sync"
 	"time"
 )
@@ -52,7 +54,23 @@ type Agent struct {
 func newAgent(a *App) *Agent {
 	ag := &Agent{app: a, byID: map[string]*Request{}, wake: make(chan struct{}), rpcs: map[string]chan rpcResult{}}
 	ag.NewBindCode()
+	// After an in-app update the previous copy hands its binding over.
+	if v := os.Getenv("PUKINOTES_AGENT"); v != "" {
+		name, model, _ := strings.Cut(v, "\t")
+		ag.bound, ag.name, ag.model, ag.boundAt, ag.lastSeen = true, name, model, time.Now(), time.Now()
+		os.Unsetenv("PUKINOTES_AGENT")
+	}
 	return ag
+}
+
+// carryOver encodes the binding for the next copy after an update.
+func (ag *Agent) carryOver() string {
+	ag.mu.Lock()
+	defer ag.mu.Unlock()
+	if !ag.bound {
+		return ""
+	}
+	return strings.ReplaceAll(ag.name, "\t", " ") + "\t" + strings.ReplaceAll(ag.model, "\t", " ")
 }
 
 var bindWords = []string{"otter", "maple", "kettle", "fig", "cocoa", "plum", "sage", "oat", "pebble", "honey", "willow", "lantern"}

@@ -40,6 +40,7 @@ type PeerInfo struct {
 	Addr   string   `json:"addr"` // their tailcat server address
 	Pair   string   `json:"pair"` // shared secret for reconnecting
 	Boards []string `json:"boards"`
+	Version string  `json:"version,omitempty"` // their PukiNotes version, last time we spoke
 }
 
 type invite struct {
@@ -244,7 +245,7 @@ func (pm *PeerManager) Status() []map[string]any {
 	defer pm.mu.Unlock()
 	var out []map[string]any
 	for _, p := range pm.known {
-		st := map[string]any{"id": p.ID, "name": p.Name, "color": p.Color, "boards": p.Boards, "online": false}
+		st := map[string]any{"id": p.ID, "name": p.Name, "color": p.Color, "boards": p.Boards, "online": false, "version": p.Version}
 		if c, ok := pm.conns[p.ID]; ok {
 			st["online"] = true
 			st["latency_ms"] = c.latency.Milliseconds()
@@ -377,7 +378,7 @@ func (pm *PeerManager) handshakeOut(conn net.Conn, h hello, theirAddr string) (*
 		p = &PeerInfo{ID: their.ID}
 		pm.known[their.ID] = p
 	}
-	p.Name, p.Color, p.Addr = their.Name, their.Color, theirAddr
+	p.Name, p.Color, p.Addr, p.Version = their.Name, their.Color, theirAddr, their.Version
 	if their.Addr != "" {
 		p.Addr = their.Addr
 	}
@@ -442,7 +443,7 @@ func (pm *PeerManager) handleInbound(conn net.Conn) {
 		fail("not paired: ask for an invite code")
 		return
 	}
-	p.Name, p.Color = h.Name, h.Color
+	p.Name, p.Color, p.Version = h.Name, h.Color, h.Version
 	if h.Addr != "" {
 		p.Addr = h.Addr
 	}

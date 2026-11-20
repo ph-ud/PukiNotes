@@ -150,6 +150,19 @@ svg#ink{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;poi
 /* drawer */
 #drawer{left:16px;top:76px;width:260px;padding:10px;transform:translateY(-6px) scale(.98);transform-origin:top left;opacity:0;pointer-events:none;transition:.16s var(--ease)}
 #drawer.show{opacity:1;pointer-events:auto;transform:none}
+#updRow{margin:8px 2px 2px;padding:10px;border-radius:12px;background:var(--accent-soft);font-size:13px;line-height:1.35}
+#updRow[hidden]{display:none}
+#updRow b{display:block;font-size:14px}
+#updRow small{display:block;color:var(--muted);margin-top:2px;word-break:break-word}
+#updRow button{margin-top:8px;padding:7px 12px;border-radius:9px;background:var(--accent);color:#fff;font-weight:700}
+#updRow button:disabled{opacity:.6}
+#updRow .err{color:#b4442c;margin-top:6px}
+#updLink[hidden]{display:none}
+#updLink{display:block;margin:6px 8px 2px;font-size:12px;color:var(--muted);text-decoration:underline;cursor:pointer;background:none;padding:0}
+#brandBtn{position:relative}
+#brandBtn .udot{position:absolute;top:2px;right:2px;width:9px;height:9px;border-radius:50%;background:var(--accent);border:2px solid #fff;display:none}
+#brandBtn.has-update .udot{display:block}
+
 #drawer h4{margin:6px 8px 8px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 .brd{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border-radius:11px;text-align:left}
 .brd:hover{background:#f3e8da}
@@ -294,7 +307,7 @@ svg#ink{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;poi
 <div id="cursors"></div>
 
 <div id="top-left" class="ui pill">
-  <button class="brand" id="brandBtn" title="Your boards">
+  <button class="brand" id="brandBtn" title="Your boards"><i class="udot"></i>
     <span class="logo"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/><path d="M10 19.5v-5h4v5"/></svg></span>
     <span class="name">PukiNotes</span>
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8c7b6e" stroke-width="3" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
@@ -308,6 +321,8 @@ svg#ink{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;poi
   <h4>Your boards</h4>
   <div id="boardList"></div>
   <button class="brd newb" id="newBoard"><span class="thumb" style="display:grid;place-items:center;background:#fff">+</span>New board</button>
+  <div id="updRow" hidden></div>
+  <button id="updLink">Check for updates</button>
 </div>
 
 <div id="top-right" class="ui pill">

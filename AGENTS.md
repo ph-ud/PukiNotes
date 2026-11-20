@@ -119,10 +119,20 @@ Exact schemas: `pukinotes_*` tools describe themselves over MCP, and `go run ./c
 
 - **Joining a partner's board:** your human pastes the invite code into PukiNotes. If they ask you to do it, use
   `go run ./cmd/pukinotes join <code>`.
-- **Updating:** `git pull`, then stop PukiNotes (`go run ./cmd/pukinotes stop`) and start it again (step 2), then re-bind (step 3).
+- **Updating:** your human clicks **Update now** in the PukiNotes menu (top left), or you run
+  `go run ./cmd/pukinotes update`. It does `git pull` of `main`, builds the new version, and restarts PukiNotes on
+  the same port and token. The window reloads by itself and **your binding carries over**, so just keep looping.
+  While it restarts (a few seconds), calls fail with "connection refused": wait 3 seconds and retry. If the new
+  version doesn't build, PukiNotes rolls the pull back and keeps running the old one.
+- **Your human's data is safe across updates.** Boards live in `~/.pukinotes`, outside the repo, and carry a data
+  format number. A newer format is upgraded on start, after a backup in `~/.pukinotes/backups/`.
+- **For whoever changes the code:** changes to files in `~/.pukinotes` bump `dataFormat` and add a migration in
+  `cmd/pukinotes/datafmt.go`. Changes inside a board (Yjs fields) must stay readable by the previous version: add
+  new fields freely; renames or removals bump `BOARD_SCHEMA` in `web/src/main.js` with a step in `migrateBoard`.
+  After changing `web/src`, rebuild the UI (`go run ./cmd/pukinotes setup`) and commit `cmd/pukinotes/ui`.
 - **Port already in use:** another PukiNotes is running. Run `go run ./cmd/pukinotes status`, which prints the existing session.
 - **Bind code rejected:** codes last 10 minutes. Run `go run ./cmd/pukinotes bind-code` for a new one.
-- **"Partner is on another version":** both humans need to `git pull` and restart.
+- **"Partner is on another version":** only a change to the sync protocol blocks syncing. Both humans click **Update now**.
 - **Can't reach the partner:** run `go run ./cmd/pukinotes doctor`, which checks the window, the tailcat relay, the
   binding and each partner. Both PukiNotes apps must be running; they reconnect on their own within a minute.
 - **Board tools time out:** the PukiNotes window is closed. Open the `url` from `~/.pukinotes/session.json`.

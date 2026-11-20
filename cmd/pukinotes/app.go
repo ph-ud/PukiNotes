@@ -42,6 +42,7 @@ type App struct {
 	store   *Store
 	peers   *PeerManager
 	agent   *Agent
+	updater *Updater
 	srv     *http.Server
 	stopped chan struct{}
 
@@ -110,6 +111,7 @@ func (a *App) helloData() json.RawMessage {
 		"agent":   a.agent.Status(),
 		"net":     a.peers.NetStatus(),
 		"version": version,
+		"update":  a.updater.Status(),
 	})
 }
 
@@ -146,7 +148,16 @@ func (a *App) handleAPI(w http.ResponseWriter, r *http.Request) {
 	switch parts[1] {
 	case "status":
 		enc.Encode(map[string]any{"ok": true, "version": version, "me": a.id.Profile(), "boards": a.boardList(),
-			"peers": a.peers.Status(), "net": a.peers.NetStatus(), "agent": a.agent.Status(), "ui_open": a.anyClient() != nil})
+			"peers": a.peers.Status(), "net": a.peers.NetStatus(), "agent": a.agent.Status(), "ui_open": a.anyClient() != nil, "update": a.updater.Status()})
+	case "update":
+		// check, then update if main has something new (restarts PukiNotes)
+		a.updater.Check()
+		st := a.updater.Status()
+		if n, _ := st["behind"].(int); n > 0 && st["error"] == "" {
+			go a.updater.Apply()
+			st["started"] = true
+		}
+		enc.Encode(st)
 	case "shutdown":
 		enc.Encode(map[string]any{"ok": true})
 		go func() { time.Sleep(100 * time.Millisecond); a.Shutdown() }()
@@ -300,6 +311,10 @@ func (a *App) fromUI(c *uiClient, m Msg) {
 				log.Printf("compact %s: %v", m.B, err)
 			}
 		}
+	case "update":
+		go a.updater.Apply()
+	case "checkupdate":
+		go a.updater.Check()
 	case "ping":
 		a.mu.Lock()
 		c.seen = time.Now()
