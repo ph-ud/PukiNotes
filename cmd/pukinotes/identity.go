@@ -14,7 +14,7 @@ import (
 	"tailscale.com/types/key"
 )
 
-// Identity is this computer's Casa identity. It never leaves this machine,
+// Identity is this computer's PukiNotes identity. It never leaves this machine,
 // except for the public parts that go into invites.
 type Identity struct {
 	mu        sync.Mutex           `json:"-"`

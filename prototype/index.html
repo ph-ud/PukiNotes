@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Casa</title>
+<title>PukiNotes</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,650&family=Kalam:wght@400&family=Nunito:wght@500;700;800&display=swap" rel="stylesheet">
@@ -270,7 +270,7 @@ svg#ink{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;poi
 <div id="top-left" class="ui pill">
   <button class="brand" id="brandBtn" title="Your boards">
     <span class="logo"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v9.5h13V10"/><path d="M10 19.5v-5h4v5"/></svg></span>
-    <span class="name">Casa</span>
+    <span class="name">PukiNotes</span>
     <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#8c7b6e" stroke-width="3" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg>
   </button>
   <span class="sep"></span>
@@ -319,10 +319,10 @@ svg#ink{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;poi
 <div id="hint" class="ui pill"><span>✨</span><span><b>Mouse helper:</b> pause at the end of a stroke and it snaps into a straight line, box or circle. Hold <b>Shift</b> for straight lines.</span><button class="x" id="hintX" title="Dismiss">×</button></div>
 <aside id="claude" class="ui pill" aria-label="Your agent">
   <div class="ch-head"><span class="spark">✦</span><b>Your agent</b><span class="demo">scripted demo</span><button class="x" id="claudeX" title="Close">×</button></div>
-  <div class="bind"><i></i><div><b>Claude Code</b> is bound to Casa<small>your session on this Mac · uses your own plan · any agent works</small></div></div>
+  <div class="bind"><i></i><div><b>Claude Code</b> is bound to PukiNotes<small>your session on this Mac · uses your own plan · any agent works</small></div></div>
   <div class="tabs"><button class="on" data-tab="ask">Ask</button><button data-tab="hist">History</button></div>
   <div class="pane" id="askPane">
-    <div id="chat"><div class="bub c">Hi, I’m your Claude Code session, bound to Casa. Ask me here, or write <b>@ai</b> in any comment on the board. Everything I change shows up in <b>History</b>, so you can revert it in one click.</div></div>
+    <div id="chat"><div class="bub c">Hi, I’m your Claude Code session, bound to PukiNotes. Ask me here, or write <b>@ai</b> in any comment on the board. Everything I change shows up in <b>History</b>, so you can revert it in one click.</div></div>
     <div class="chips"><button>Make a budget table for this month</button><button>Tidy up the sticky notes</button><button>Summarize this board</button></div>
     <form id="askForm"><input id="askInput" placeholder="Ask your agent to do something…" autocomplete="off"><button title="Send">↑</button></form>
   </div>
@@ -338,7 +338,7 @@ svg#ink{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;poi
 <div id="scrim">
   <div class="modal" role="dialog" aria-label="Share this board">
     <h2>Invite someone to this board</h2>
-    <p>Send this code over any chat. When they paste it into Casa, your two computers connect directly. No accounts, no cloud copy.</p>
+    <p>Send this code over any chat. When they paste it into PukiNotes, your two computers connect directly. No accounts, no cloud copy.</p>
     <div class="seg"><button class="on" data-mode="p2p">Direct link</button><button data-mode="ts">Over Tailscale</button></div>
     <div class="code"><span id="inviteCode">maple-otter-kettle-42</span><button class="copy" id="copyBtn">Copy</button></div>
     <ul class="facts" id="facts"></ul>
@@ -348,13 +348,13 @@ svg#ink{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;poi
 
 <script>
 /* =========================================================
-   Casa — look & feel prototype. Single file, no build step.
+   PukiNotes — look & feel prototype. Single file, no build step.
    Everything is stored in this browser only (localStorage).
    ========================================================= */
 const $ = s => document.querySelector(s);
 const vp = $('#viewport'), world = $('#world'), ink = $('#ink'), itemsEl = $('#items'), pinsEl = $('#pins');
 const SVGNS = 'http://www.w3.org/2000/svg';
-/* Whatever agent you bound with `casa_bind`: Claude Code, Codex, Gemini CLI… (simulated here) */
+/* Whatever agent you bound with `pukinotes_bind`: Claude Code, Codex, Gemini CLI… (simulated here) */
 const AGENT_NAME = 'Claude Code';
 const PEOPLE = { me:{name:'You', color:'#d4694a', initial:'Y'}, mo:{name:'Mo', color:'#7a9a6b', initial:'M'}, claude:{name:AGENT_NAME, color:'#a26fae', initial:'✦'}, moai:{name:'Mo’s agent (Codex)', color:'#5b7fa6', initial:'✦'} };
 const INKS = ['#3b2f2a','#d4694a','#7a9a6b','#5b7fa6','#a26fae'];
@@ -373,14 +373,14 @@ let inkColor = INKS[0], inkWidth = WIDTHS[1], stickyColor = STICKIES[0];
 let undoStack = [], redoStack = [];
 let lastPointer = { x: innerWidth/2, y: innerHeight/2 };
 
-function load(){ try { return JSON.parse(localStorage.getItem('casa-proto-v2')); } catch(e){ return null; } }
+function load(){ try { return JSON.parse(localStorage.getItem('pukinotes-proto-v2')); } catch(e){ return null; } }
 let saveT;
 function save(){
   clearTimeout(saveT);
   $('#savedLabel').textContent = 'Saving…';
   saveT = setTimeout(() => {
     board.view = view; store.current = board.id;
-    try { localStorage.setItem('casa-proto-v2', JSON.stringify(store)); $('#savedLabel').textContent = 'Saved on this computer'; }
+    try { localStorage.setItem('pukinotes-proto-v2', JSON.stringify(store)); $('#savedLabel').textContent = 'Saved on this computer'; }
     catch(e){ $('#savedLabel').textContent = 'Not saved (storage full)'; }
   }, 250);
 }
@@ -398,7 +398,7 @@ function seed(){
   }
   const items = [
     {id:uid(), type:'sticky', x:0, y:0, w:230, color:STICKIES[0], rot:-1.2, author:'me',
-      text:'Welcome to Casa ☕\nDouble-click to write.\nPaste a photo with ⌘V.\nDrag empty space to look around.'},
+      text:'Welcome to PukiNotes ☕\nDouble-click to write.\nPaste a photo with ⌘V.\nDrag empty space to look around.'},
     {id:uid(), type:'sticky', x:300, y:30, w:210, color:STICKIES[1], rot:1.4, author:'mo',
       text:'Saturday market\n• sourdough\n• figs\n• flowers for the hallway'},
     {id:uid(), type:'sticky', x:580, y:-20, w:210, color:STICKIES[2], rot:-.6, author:'me',
@@ -874,14 +874,14 @@ document.addEventListener('pointerdown', e => { if (!e.target.closest('#drawer')
 const FACTS = {
   p2p: [['🔒','End-to-end encrypted. The code is the key, and it only works for this board.'],
         ['↔','Your computers find each other through any network, even behind home routers.'],
-        ['☁','Nothing is stored on anyone\'s server. Close Casa and the link closes too.']],
+        ['☁','Nothing is stored on anyone\'s server. Close PukiNotes and the link closes too.']],
   ts:  [['🔒','Uses your private Tailscale network. Only devices you\'ve added can reach it.'],
         ['↔','Best if you both already use Tailscale. Your partner needs to be in your tailnet.'],
-        ['☁','Still no Casa server. Tailscale only helps the two computers find each other.']],
+        ['☁','Still no PukiNotes server. Tailscale only helps the two computers find each other.']],
 };
 function showFacts(mode){
   $('#facts').innerHTML = FACTS[mode].map(([i, t]) => `<li><i>${i}</i><span>${t}</span></li>`).join('');
-  $('#inviteCode').textContent = mode === 'p2p' ? 'maple-otter-kettle-42' : 'casa://laptop.tail3a9f.ts.net/our-weekend';
+  $('#inviteCode').textContent = mode === 'p2p' ? 'maple-otter-kettle-42' : 'pukinotes://laptop.tail3a9f.ts.net/our-weekend';
   document.querySelectorAll('.seg button').forEach(b => b.classList.toggle('on', b.dataset.mode === mode));
 }
 document.querySelectorAll('.seg button').forEach(b => b.onclick = () => showFacts(b.dataset.mode));

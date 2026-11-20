@@ -1,4 +1,4 @@
-# Casa
+# PukiNotes
 
 A cozy, local-first whiteboard for two. No accounts, no server. Boards are shared peer-to-peer over tailcat,
 and your own AI agent is the helper inside the app.
@@ -7,7 +7,7 @@ and your own AI agent is the helper inside the app.
 
 Point your AI agent (any of them: Claude Code, Codex, Gemini CLI, Cursor…) at this repo and say:
 
-> **launch Casa**
+> **launch PukiNotes**
 
 Your agent reads [`AGENTS.md`](AGENTS.md), sets things up, launches the app, and binds itself to it. From then
 on, ask it things in the ✦ AI panel, or write `@ai` in any comment on the board. That work runs in **your**
@@ -18,7 +18,7 @@ To share a board, click **Share** and send your partner the code.
 ## What's here
 
 - `AGENTS.md`: the launch and binding procedure, written for agents (`CLAUDE.md` just points to it)
-- `cmd/casa/`: the app. One Go program: local web server, tailcat peer sync, and the agent tools (MCP + CLI).
+- `cmd/pukinotes/`: the app. One Go program: local web server, tailcat peer sync, and the agent tools (MCP + CLI).
   The built UI is embedded, so Go is the only thing you need.
 - `web/`: UI source (Yjs + plain JS). Only needed if you change the UI.
 - `DESIGN.md`: design and architecture notes
@@ -27,12 +27,12 @@ To share a board, click **Share** and send your partner the code.
 ## Starting it by hand
 
 ```
-go run ./cmd/casa start      # opens Casa in your browser
-go run ./cmd/casa doctor     # checks everything
-go run ./cmd/casa stop
+go run ./cmd/pukinotes start      # opens PukiNotes in your browser
+go run ./cmd/pukinotes doctor     # checks everything
+go run ./cmd/pukinotes stop
 ```
 
-## Using Casa
+## Using PukiNotes
 
 - **Drag empty space** to pan. **Scroll wheel** zooms. Trackpad scrolling pans, and pinching zooms.
 - **P**: draw. Pause at the end of a stroke to snap it into a line, box or circle. Hold Shift for straight lines.
@@ -42,4 +42,4 @@ go run ./cmd/casa stop
 - ⌘Z / ⇧⌘Z: undo / redo your own changes. Delete removes the selection.
 - **Share**: create an invite code for the board you're on, or paste your partner's code to join theirs.
 
-Boards are saved on your computer in `~/.casa`. Shared boards sync whenever both Casas are running.
+Boards are saved on your computer in `~/.pukinotes`. Shared boards sync whenever both PukiNotes apps are running.

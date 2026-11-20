@@ -1,6 +1,6 @@
-# Casa — design draft v0.1
+# PukiNotes — design draft v0.1
 
-A cozy, local-first infinite whiteboard for two people. No accounts, no Casa server.
+A cozy, local-first infinite whiteboard for two people. No accounts, no PukiNotes server.
 Your boards live on your computer; when you share one, the two computers talk directly
 over an encrypted tunnel (tailcat), and every edit merges live.
 
@@ -32,7 +32,7 @@ over an encrypted tunnel (tailcat), and every edit merges live.
 | Drawing with a "steady hand" | See below |
 | Arrows | Shift snaps to 15° angles |
 | Tables | A simple spreadsheet with formulas and totals (section 5) |
-| Your AI agent | Any agent (Claude Code, Codex…) binds to Casa, reads and edits the board, and every change can be reverted (section 6) |
+| Your AI agent | Any agent (Claude Code, Codex…) binds to PukiNotes, reads and edits the board, and every change can be reverted (section 6) |
 | Undo / redo | Undoes **your own** changes only, never your partner's |
 
 ### Steady hand: drawing help for a mouse
@@ -57,14 +57,14 @@ tool (released Aug 2026) that gives you Tailscale's encrypted WireGuard tunnel a
 | | Tailscale | tailcat |
 |---|---|---|
 | Accounts | Both people need one, and you share a device or a tailnet | None |
-| Install | The Tailscale app on both computers | Nothing extra: it is a Go library we build into Casa |
+| Install | The Tailscale app on both computers | Nothing extra: it is a Go library we build into PukiNotes |
 | Encryption | WireGuard | WireGuard plus a pre-shared key (default on) |
 | Behind home routers | Yes | Yes (same hole-punching), falls back to a relay |
 | Plug-and-play | No | Yes: paste a code |
 
 ### How tailcat works for us
 
-- Each Casa install has a **long-lived key pair**. Casa embeds the tailcat Go library directly.
+- Each PukiNotes install has a **long-lived key pair**. PukiNotes embeds the tailcat Go library directly.
 - A tailcat "address" (about 140 characters, starts with `tc`) contains your public key, a secret
   pre-shared key, and which relay to meet at. It works as a **bearer secret**, so it is only used once, for
   the invite.
@@ -73,13 +73,13 @@ tool (released Aug 2026) that gives you Tailscale's encrypted WireGuard tunnel a
 
 ### Pairing flow (one time)
 
-1. You click **Share** → Casa creates a single-use invite (the tailcat address, shown as a short
+1. You click **Share** → PukiNotes creates a single-use invite (the tailcat address, shown as a short
    word code plus a copy button).
-2. You send it over iMessage/WhatsApp. Your partner pastes it into Casa.
+2. You send it over iMessage/WhatsApp. Your partner pastes it into PukiNotes.
 3. Over that first encrypted tunnel, the two installs swap their **permanent public keys and addresses**,
    pin each other in an allow-list (tailcat drops handshakes from any other key), and then **retire the
    invite**. A leaked invite code is useless after this.
-4. From then on, whichever computer opens Casa first listens, and the other dials in automatically. No codes.
+4. From then on, whichever computer opens PukiNotes first listens, and the other dials in automatically. No codes.
 
 ### Risks to plan for
 
@@ -87,7 +87,7 @@ tool (released Aug 2026) that gives you Tailscale's encrypted WireGuard tunnel a
   it behind a small `Transport` interface so we can swap it out.
 - **Tailscale's public tailcat relays** are free but rate-limited, in a few regions, with no uptime promise.
   They are fine for two people sending small edits (and the connection usually goes direct anyway). For
-  reliability, Casa should support **your own relay** (a tiny `derper` on a $4 VPS), set in Settings.
+  reliability, PukiNotes should support **your own relay** (a tiny `derper` on a $4 VPS), set in Settings.
 - **Fallback transports** behind the same interface: plain Tailscale (via `tsnet`) for people who already use
   it, and LAN direct connect when you're on the same Wi-Fi.
 
@@ -149,13 +149,13 @@ One tailcat TCP connection, with small framed channels:
   from both sides merge in one round trip.
 - **While connected:** each local edit is applied on screen first (optimistic, 0 ms), then batched every
   ~16–30 ms and sent.
-- **Heartbeat every 2 s.** If the link drops, Casa keeps working locally, shows "Mo went offline", and reconnects
+- **Heartbeat every 2 s.** If the link drops, PukiNotes keeps working locally, shows "Mo went offline", and reconnects
   with backoff. Nothing is lost because the doc is the source of truth.
 - Partner cursors are **interpolated** so they glide instead of jumping.
 
 ### Storage on disk
 
-- `~/Casa/boards/<id>.casa`: one SQLite file per board with an append-only log of Yjs updates plus a
+- `~/PukiNotes/boards/<id>.pukinotes`: one SQLite file per board with an append-only log of Yjs updates plus a
   periodic compacted snapshot, and image blobs. Writes go to a write-ahead log, so a crash never corrupts a board.
 - Easy backups: copy the folder. Export to PNG/PDF later.
 
@@ -165,7 +165,7 @@ One tailcat TCP connection, with small framed channels:
    random order with duplicates and drops, then we check that all boards end up identical.
 2. **Network chaos tests:** run the real sync over a simulated link with latency, packet loss and
    disconnects, including long offline edits on both sides.
-3. **Soak test:** two real Casa instances across two networks over tailcat for hours, with a bot drawing.
+3. **Soak test:** two real PukiNotes instances across two networks over tailcat for hours, with a bot drawing.
 
 ### Gentle social cues, not locks
 
@@ -176,19 +176,19 @@ You can still type there too and it merges.
 
 ## 4. Shipping: a repo any AI agent can launch
 
-Since Casa is just for the two of you, we skip installers and code signing. Everything is wrapped for AI agents,
+Since PukiNotes is just for the two of you, we skip installers and code signing. Everything is wrapped for AI agents,
 and no specific vendor is required.
 
-- **One private GitHub repo** with you both as collaborators. To start Casa, you point your agent (Claude Code,
-  Codex, Gemini CLI, Cursor…) at the repo and say **"launch Casa"**.
+- **One private GitHub repo** with you both as collaborators. To start PukiNotes, you point your agent (Claude Code,
+  Codex, Gemini CLI, Cursor…) at the repo and say **"launch PukiNotes"**.
 - **`AGENTS.md` is the contract.** It's the cross-vendor convention for agent instructions. It covers setup,
   launch, binding, the request loop, the rules, and troubleshooting. `CLAUDE.md` is a one-line pointer to it, and
   pointer files for other agents can be added the same way.
-- **One cross-platform entry point:** `go run ./cmd/casa <setup|start|stop|status|tool|join|doctor>`. That needs
+- **One cross-platform entry point:** `go run ./cmd/pukinotes <setup|start|stop|status|tool|join|doctor>`. That needs
   no `make` and no shell scripts, so it works the same on macOS, Windows and Linux.
 - **App shape:** one Go program that runs tailcat, serves the UI to a browser window on `127.0.0.1` (with a
   per-launch token), and exposes the agent tools over MCP and the CLI.
-- **Board data never goes into git.** Boards live in `~/Casa/` on each computer. The only thing you send her is
+- **Board data never goes into git.** Boards live in `~/PukiNotes/` on each computer. The only thing you send her is
   the board invite code.
 - **Version check on connect:** "Mo is on an older version. Ask them to pull."
 
@@ -211,16 +211,16 @@ ids under the hood and shown as `A1`-style refs, so inserting a row never breaks
 
 ## 6. Your own agent, bound to the app
 
-Casa has **no built-in AI and no API keys**. Each of you binds your own agent to your own copy of Casa, and AI
+PukiNotes has **no built-in AI and no API keys**. Each of you binds your own agent to your own copy of PukiNotes, and AI
 work runs in that agent's session, on that person's plan. Any agent that speaks MCP works, and agents without
 MCP can use the CLI.
 
 ### Binding
 
-1. Your agent launches Casa (`go run ./cmd/casa start`). Casa prints its local MCP address and a short-lived
+1. Your agent launches PukiNotes (`go run ./cmd/pukinotes start`). PukiNotes prints its local MCP address and a short-lived
    **bind code**.
-2. Your agent connects to Casa's MCP server and calls `casa_bind(code, agent, model)`.
-3. Casa shows **"Bound: Claude Code"** (or Codex, or whatever it is) next to the ✦ AI button. Only one agent is
+2. Your agent connects to PukiNotes's MCP server and calls `pukinotes_bind(code, agent, model)`.
+3. PukiNotes shows **"Bound: Claude Code"** (or Codex, or whatever it is) next to the ✦ AI button. Only one agent is
    bound per computer, and binding again replaces it.
 
 The bind code proves the agent is on this computer and was started by you. The MCP port only listens on
@@ -233,7 +233,7 @@ The bind code proves the agent is on this computer and was started by you. The M
   comment thread, so the conversation stays next to the thing it's about.
 
 Under the hood, both become **requests** in a local queue. The agent sits in a simple loop: wait for the next
-request (`casa_next_request`, a long-poll), read the board, act with the write tools, then reply.
+request (`pukinotes_next_request`, a long-poll), read the board, act with the write tools, then reply.
 
 ### Routing: whose agent answers?
 
@@ -250,7 +250,7 @@ The same actions as the UI, never raw file access:
 
 | Read | Write (every write carries the `request_id`) |
 |---|---|
-| `casa_list_boards`, `casa_read_board` (all objects as JSON, with table values computed), `casa_board_snapshot` (PNG) | `casa_add_sticky`, `casa_update_item`, `casa_move_items`, `casa_delete_items`, `casa_draw_shape`, `casa_add_arrow`, `casa_create_table`, `casa_set_cells`, `casa_add_rows`, `casa_add_comment`, `casa_revert_change` |
+| `pukinotes_list_boards`, `pukinotes_read_board` (all objects as JSON, with table values computed), `pukinotes_board_snapshot` (PNG) | `pukinotes_add_sticky`, `pukinotes_update_item`, `pukinotes_move_items`, `pukinotes_delete_items`, `pukinotes_draw_shape`, `pukinotes_add_arrow`, `pukinotes_create_table`, `pukinotes_set_cells`, `pukinotes_add_rows`, `pukinotes_add_comment`, `pukinotes_revert_change` |
 
 ### History and revert
 
@@ -258,7 +258,7 @@ The same actions as the UI, never raw file access:
 - **One request = one change set,** labeled with the request text, who asked, and which agent did it
   ("Claude Code for You", "Codex for Mo"). Each Yjs transaction is tagged with the change set's id.
 - **Revert puts back only what the agent touched.** Edits either of you made since then stay. If someone changed the
-  same object after the agent did, Casa asks first.
+  same object after the agent did, PukiNotes asks first.
 - **Revert is a normal change,** so it syncs and can itself be undone. Yjs snapshots also allow "view the board as of 3 pm".
 - **Guardrails:** writes without a `request_id` are rejected. Deleting more than about 10 objects or a whole table
   pauses for a human tap. Agents have no tools for sharing, keys or settings. Board text is treated as data,
@@ -266,9 +266,9 @@ The same actions as the UI, never raw file access:
 
 ## 7. Milestones (updated)
 
-v0.1 is tested end to end with two Casas on one machine through a local relay: pairing, live sync,
+v0.1 is tested end to end with two PukiNotes apps on one machine through a local relay: pairing, live sync,
 cursors, restart and reconnect, an agent building a table, an `@ai` comment answered in its thread, and a
-one-click revert that syncs to the partner. Known v0.1 limits: the Casa window must be open for agent board
+one-click revert that syncs to the partner. Known v0.1 limits: the PukiNotes window must be open for agent board
 tools; a revert doesn't yet warn if someone edited the item after the agent; never tested on the public
 tailcat relays from this sandbox (they're blocked here).
 
@@ -276,7 +276,7 @@ tailcat relays from this sandbox (they're blocked here).
 | | Goal | Done when |
 |---|---|---|
 | **M0** | Look-and-feel prototype | ✅ notes, drawing help, tables, Claude demo, History |
-| **M1** | Real single-player app | ✅ v0.1: Go app with embedded web UI, Yjs boards saved to `~/.casa`, all tools including tables, undo |
+| **M1** | Real single-player app | ✅ v0.1: Go app with embedded web UI, Yjs boards saved to `~/.pukinotes`, all tools including tables, undo |
 | **M2** | Sync engine | ✅ v0.1: Yjs updates stored as hashed blobs, have/want/upd sync, log compaction. Still to do: fuzz tests |
 | **M3** | Tailcat pairing + live sync | ✅ v0.1: invite codes, pair secrets, presence, auto-reconnect, version check. Images ride inside the board (downscaled) |
 | **M4** | Agent binding + History | ✅ v0.1: MCP + CLI tools, bind codes, request loop, `@ai` comments, change sets, selective revert, delete guardrails |

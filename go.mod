@@ -1,4 +1,4 @@
-module casa
+module pukinotes
 
 go 1.27.1
 

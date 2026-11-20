@@ -1,13 +1,13 @@
-// Command casa is a cozy, local-first whiteboard for two.
+// Command pukinotes is a cozy, local-first whiteboard for two.
 //
-//	go run ./cmd/casa start      launch (prints one JSON line with url, mcp, bind_code)
-//	go run ./cmd/casa status     show the running Casa
-//	go run ./cmd/casa stop       stop it
-//	go run ./cmd/casa tool NAME --json '{...}'   call an agent tool (or: tool --list)
-//	go run ./cmd/casa join CODE  join a board from an invite code
-//	go run ./cmd/casa bind-code  print a fresh bind code
-//	go run ./cmd/casa doctor     check the setup and the connection
-//	go run ./cmd/casa setup      rebuild the UI from web/ (optional; a built UI is included)
+//	go run ./cmd/pukinotes start      launch (prints one JSON line with url, mcp, bind_code)
+//	go run ./cmd/pukinotes status     show the running PukiNotes
+//	go run ./cmd/pukinotes stop       stop it
+//	go run ./cmd/pukinotes tool NAME --json '{...}'   call an agent tool (or: tool --list)
+//	go run ./cmd/pukinotes join CODE  join a board from an invite code
+//	go run ./cmd/pukinotes bind-code  print a fresh bind code
+//	go run ./cmd/pukinotes doctor     check the setup and the connection
+//	go run ./cmd/pukinotes setup      rebuild the UI from web/ (optional; a built UI is included)
 package main
 
 import (
@@ -44,15 +44,15 @@ type session struct {
 	Home     string `json:"home"`
 }
 
-func casaHome() string {
-	if h := os.Getenv("CASA_HOME"); h != "" {
+func pukinotesHome() string {
+	if h := os.Getenv("PUKINOTES_HOME"); h != "" {
 		return h
 	}
 	h, err := os.UserHomeDir()
 	if err != nil {
 		log.Fatal(err)
 	}
-	return filepath.Join(h, ".casa")
+	return filepath.Join(h, ".pukinotes")
 }
 
 func main() {
@@ -82,7 +82,7 @@ func main() {
 		os.Stdout.Write(out)
 	case "join":
 		if len(args) < 1 {
-			log.Fatal("usage: casa join <invite-code>")
+			log.Fatal("usage: pukinotes join <invite-code>")
 		}
 		s := mustSession()
 		out, err := apiPost(s, "join", map[string]string{"code": strings.Join(args, "")})
@@ -104,10 +104,10 @@ func main() {
 	}
 }
 
-const helpText = `casa: a cozy, local-first whiteboard for two. See AGENTS.md.
+const helpText = `pukinotes: a cozy, local-first whiteboard for two. See AGENTS.md.
 
-  start [--port N] [--no-open]   launch Casa (keeps running; prints a JSON line)
-  status | stop | bind-code      manage the running Casa
+  start [--port N] [--no-open]   launch PukiNotes (keeps running; prints a JSON line)
+  status | stop | bind-code      manage the running PukiNotes
   tool --list | tool NAME --json '{...}'   call an agent tool
   join CODE                      join a board from an invite code
   doctor                         check setup and connection
@@ -121,7 +121,7 @@ func exitOn(err error) {
 }
 
 func readSession() (*session, error) {
-	b, err := os.ReadFile(filepath.Join(casaHome(), "session.json"))
+	b, err := os.ReadFile(filepath.Join(pukinotesHome(), "session.json"))
 	if err != nil {
 		return nil, err
 	}
@@ -136,7 +136,7 @@ func mustSession() *session {
 			return s
 		}
 	}
-	exitOn(errors.New("Casa isn't running: start it with `go run ./cmd/casa start`"))
+	exitOn(errors.New("PukiNotes isn't running: start it with `go run ./cmd/pukinotes start`"))
 	return nil
 }
 
@@ -201,16 +201,16 @@ func cmdTool(args []string) {
 
 func cmdStart(args []string) {
 	fs := flag.NewFlagSet("start", flag.ExitOnError)
-	port := fs.Int("port", 0, "local port (default 47321, or CASA_PORT)")
+	port := fs.Int("port", 0, "local port (default 47321, or PUKINOTES_PORT)")
 	noOpen := fs.Bool("no-open", false, "don't open a browser window")
 	fs.Parse(args)
 	if *port == 0 {
 		*port = defaultPort
-		if p, err := strconv.Atoi(os.Getenv("CASA_PORT")); err == nil {
+		if p, err := strconv.Atoi(os.Getenv("PUKINOTES_PORT")); err == nil {
 			*port = p
 		}
 	}
-	home := casaHome()
+	home := pukinotesHome()
 	exitOn(os.MkdirAll(home, 0o700))
 
 	// Already running? Print its session and leave it alone.
@@ -234,7 +234,7 @@ func cmdStart(args []string) {
 
 	ln, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", *port))
 	if err != nil {
-		exitOn(fmt.Errorf("port %d is busy (another app?). Try: casa start --port %d", *port, *port+1))
+		exitOn(fmt.Errorf("port %d is busy (another app?). Try: pukinotes start --port %d", *port, *port+1))
 	}
 	id, err := loadIdentity(home)
 	exitOn(err)
@@ -296,15 +296,15 @@ func cmdDoctor() {
 		}
 		fmt.Printf("[%s] %s\n", mark, msg)
 	}
-	fmt.Printf("casa %s, %s/%s, home %s\n", version, runtime.GOOS, runtime.GOARCH, casaHome())
+	fmt.Printf("pukinotes %s, %s/%s, home %s\n", version, runtime.GOOS, runtime.GOARCH, pukinotesHome())
 	s, err := readSession()
 	if err != nil {
-		ok(false, "Casa is not running (go run ./cmd/casa start)")
+		ok(false, "PukiNotes is not running (go run ./cmd/pukinotes start)")
 		return
 	}
 	b, err := apiGet(s, "status")
 	if err != nil {
-		ok(false, "Casa is not responding: "+err.Error())
+		ok(false, "PukiNotes is not responding: "+err.Error())
 		return
 	}
 	var st struct {
@@ -325,8 +325,8 @@ func cmdDoctor() {
 		UIOpen bool `json:"ui_open"`
 	}
 	json.Unmarshal(b, &st)
-	ok(true, "Casa is running at "+s.URL)
-	ok(st.UIOpen, "a Casa window is open (needed for agent board tools)")
+	ok(true, "PukiNotes is running at "+s.URL)
+	ok(st.UIOpen, "a PukiNotes window is open (needed for agent board tools)")
 	if st.Net.Ready {
 		ok(true, "tailcat relay connection is up")
 	} else {
@@ -337,7 +337,7 @@ func cmdDoctor() {
 		if p.Online {
 			ok(true, fmt.Sprintf("partner %s connected (%d ms)", p.Name, p.LatencyMS))
 		} else {
-			ok(false, fmt.Sprintf("partner %s not connected (is their Casa running?)", p.Name))
+			ok(false, fmt.Sprintf("partner %s not connected (is their PukiNotes running?)", p.Name))
 		}
 	}
 }
@@ -357,5 +357,5 @@ func cmdSetup() {
 		cmd.Stdout, cmd.Stderr = os.Stderr, os.Stderr
 		exitOn(cmd.Run())
 	}
-	fmt.Println(`{"ok":true,"note":"UI rebuilt into cmd/casa/ui"}`)
+	fmt.Println(`{"ok":true,"note":"UI rebuilt into cmd/pukinotes/ui"}`)
 }

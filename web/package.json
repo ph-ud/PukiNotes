@@ -1,5 +1,5 @@
 {
-  "name": "casa-ui",
+  "name": "pukinotes-ui",
   "private": true,
   "type": "module",
   "scripts": { "build": "node build.mjs" },

@@ -19,7 +19,7 @@ import (
 var uiFS embed.FS
 
 // Msg is the one message shape used between Go and the browser, and between
-// two Casa peers. Unused fields are omitted.
+// two PukiNotes peers. Unused fields are omitted.
 type Msg struct {
 	T     string          `json:"t"`
 	B     string          `json:"b,omitempty"`    // board id

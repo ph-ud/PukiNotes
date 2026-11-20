@@ -1,6 +1,6 @@
 package main
 
-// Board storage. Casa's Go side treats Yjs updates as opaque blobs: each one is
+// Board storage. PukiNotes's Go side treats Yjs updates as opaque blobs: each one is
 // stored once, identified by its SHA-256. Syncing two copies is then just
 // "send me the ids I don't have", and applying an update twice is harmless.
 

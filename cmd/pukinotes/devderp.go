@@ -1,10 +1,10 @@
 package main
 
-// A tiny local relay for testing two Casa copies on one computer without
+// A tiny local relay for testing two PukiNotes copies on one computer without
 // internet access. Not used normally.
 //
-//	CASA_DEV_DERP=serve:/tmp/region.json   run a local relay and write its details
-//	CASA_DEV_DERP=use:/tmp/region.json     use a relay started by another copy
+//	PUKINOTES_DEV_DERP=serve:/tmp/region.json   run a local relay and write its details
+//	PUKINOTES_DEV_DERP=use:/tmp/region.json     use a relay started by another copy
 
 import (
 	"crypto/tls"
@@ -23,7 +23,7 @@ import (
 )
 
 func devDERPRegion() (*tailcfg.DERPRegion, error) {
-	v := os.Getenv("CASA_DEV_DERP")
+	v := os.Getenv("PUKINOTES_DEV_DERP")
 	if v == "" {
 		return nil, nil
 	}
@@ -59,7 +59,7 @@ func devDERPRegion() (*tailcfg.DERPRegion, error) {
 	h.Listener = ln
 	h.Config.TLSNextProto = make(map[string]func(*http.Server, *tls.Conn, http.Handler))
 	h.StartTLS()
-	r := &tailcfg.DERPRegion{RegionID: 900, RegionCode: "casa-dev", RegionName: "Casa dev relay", Nodes: []*tailcfg.DERPNode{{
+	r := &tailcfg.DERPRegion{RegionID: 900, RegionCode: "pukinotes-dev", RegionName: "PukiNotes dev relay", Nodes: []*tailcfg.DERPNode{{
 		Name: "1", RegionID: 900, HostName: "localhost", IPv4: "127.0.0.1", IPv6: "none", STUNPort: -1,
 		DERPPort: ln.Addr().(*net.TCPAddr).Port, InsecureForTests: true}}}
 	b, _ := json.Marshal(r)

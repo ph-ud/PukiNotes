@@ -2,7 +2,7 @@ package main
 
 // Peer-to-peer sync over tailcat.
 //
-// Every Casa runs a tailcat server with a stable key, so it has a stable
+// Every PukiNotes runs a tailcat server with a stable key, so it has a stable
 // tailcat address. An invite code carries that address plus a one-time secret
 // and the board id. When the partner joins, the two copies swap their own
 // addresses and a long-lived pair secret over the encrypted tunnel, and the
@@ -30,7 +30,7 @@ import (
 	"tailscale.com/tailcfg"
 )
 
-const casaPort = 7000
+const pukinotesPort = 7000
 const protoVersion = 1
 
 type PeerInfo struct {
@@ -153,7 +153,7 @@ func (pm *PeerManager) saveLocked() {
 }
 
 func quietLogf(format string, args ...any) {
-	if os.Getenv("CASA_DEBUG") != "" {
+	if os.Getenv("PUKINOTES_DEBUG") != "" {
 		log.Printf("[tailcat] "+format, args...)
 	}
 }
@@ -191,7 +191,7 @@ func (pm *PeerManager) startServer() error {
 		DERPMapURL:   pm.app.cfg.DERPMapURL,
 		Region:       pm.region,
 		OnTCP: func(port uint16) func(net.Conn) {
-			if port != casaPort {
+			if port != pukinotesPort {
 				return nil
 			}
 			return pm.handleInbound
@@ -293,15 +293,15 @@ func (pm *PeerManager) CreateInvite(board string) (string, error) {
 	pm.saveLocked()
 	ic := inviteCode{B: board, S: secret, A: pm.addr, N: pm.app.id.Profile().Name}
 	b, _ := json.Marshal(ic)
-	return "casa1-" + base64.RawURLEncoding.EncodeToString(b), nil
+	return "pukinotes1-" + base64.RawURLEncoding.EncodeToString(b), nil
 }
 
 func parseInvite(code string) (inviteCode, error) {
 	var ic inviteCode
 	code = strings.Join(strings.Fields(code), "")
-	raw, ok := strings.CutPrefix(code, "casa1-")
+	raw, ok := strings.CutPrefix(code, "pukinotes1-")
 	if !ok {
-		return ic, errors.New("that doesn't look like a Casa invite code (it should start with casa1-)")
+		return ic, errors.New("that doesn't look like a PukiNotes invite code (it should start with pukinotes1-)")
 	}
 	b, err := base64.RawURLEncoding.DecodeString(raw)
 	if err != nil {
@@ -320,10 +320,10 @@ func (pm *PeerManager) Join(ctx context.Context, code string) (string, error) {
 		return "", err
 	}
 	c := &tailcat.Client{Server: tailcat.Addr(ic.A), Key: pm.app.id.ClientKey, Logf: quietLogf, DERPMapURL: pm.app.cfg.DERPMapURL}
-	conn, err := c.DialTCPPort(ctx, casaPort)
+	conn, err := c.DialTCPPort(ctx, pukinotesPort)
 	if err != nil {
 		c.Close()
-		return "", fmt.Errorf("couldn't reach %s's Casa (is it open?): %w", ic.N, err)
+		return "", fmt.Errorf("couldn't reach %s's PukiNotes (is it open?): %w", ic.N, err)
 	}
 	pc, err := pm.handshakeOut(conn, hello{Invite: ic.S, Board: ic.B}, ic.A)
 	if err != nil {
@@ -369,7 +369,7 @@ func (pm *PeerManager) handshakeOut(conn net.Conn, h hello, theirAddr string) (*
 		return nil, errors.New(w.Error)
 	}
 	if w.Proto != protoVersion {
-		return nil, fmt.Errorf("%s runs a different Casa version (%s, you have %s); both of you should git pull and restart", their.Name, w.Version, version)
+		return nil, fmt.Errorf("%s runs a different PukiNotes version (%s, you have %s); both of you should git pull and restart", their.Name, w.Version, version)
 	}
 	pm.mu.Lock()
 	p := pm.known[their.ID]
@@ -413,7 +413,7 @@ func (pm *PeerManager) handleInbound(conn net.Conn) {
 		conn.Close()
 	}
 	if h.Proto != protoVersion {
-		fail(fmt.Sprintf("%s runs a different Casa version (%s, you have %s); both of you should git pull and restart", mine.Name, version, h.Version))
+		fail(fmt.Sprintf("%s runs a different PukiNotes version (%s, you have %s); both of you should git pull and restart", mine.Name, version, h.Version))
 		return
 	}
 	pm.mu.Lock()
@@ -750,7 +750,7 @@ func (pm *PeerManager) dial(p *PeerInfo) {
 	pm.mu.Unlock()
 	ctx, cancel := context.WithTimeout(context.Background(), 40*time.Second)
 	defer cancel()
-	conn, err := c.DialTCPPort(ctx, casaPort)
+	conn, err := c.DialTCPPort(ctx, pukinotesPort)
 	if err != nil {
 		fail()
 		return
