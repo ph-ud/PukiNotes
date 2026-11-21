@@ -252,6 +252,30 @@ The same actions as the UI, never raw file access:
 |---|---|
 | `pukinotes_list_boards`, `pukinotes_read_board` (all objects as JSON, with table values computed), `pukinotes_board_snapshot` (PNG) | `pukinotes_add_sticky`, `pukinotes_update_item`, `pukinotes_move_items`, `pukinotes_delete_items`, `pukinotes_draw_shape`, `pukinotes_add_arrow`, `pukinotes_create_table`, `pukinotes_set_cells`, `pukinotes_add_rows`, `pukinotes_add_comment`, `pukinotes_revert_change` |
 
+### Chats: several agents on one board (v0.3)
+
+Both of you can have agents working on the same board at the same time. The ✦ panel holds **chats**.
+
+- **A chat belongs to whoever started it** and is served by that person's agent, on that person's computer.
+  Either of you can add messages to any chat; they queue for that chat's agent. If the owner's computer is away,
+  the chat shows as paused and its messages run when it's back.
+- **Chats live in the board** (a new `chats` map in the Yjs doc: owner, title, messages, per-message state, and
+  the items its agent touched recently). Older copies ignore it. Only the owner's window hands messages to its agent,
+  and the agent dedups by message id, so nothing runs twice.
+- **No locks; a briefing instead.** Every request comes with a briefing on the other open chats: who started them,
+  what they were asked, whether they're working, waiting or paused, and which items they touched recently. Agents
+  steer around each other's items. A write that touches an item another chat just touched comes back with a
+  `heads_up`.
+- **The quiet safety net.** Every item has a version (a hash of its content). The window remembers which version
+  its agent last read, and an agent edit to an item that changed since is refused as stale, so the agent re-reads
+  and redoes it on the fresh item. Humans are never blocked; their edits merge as always.
+- **One turn, one undo.** Everything an agent does for one message is one change set. Its reply in the chat shows
+  an icon for each item it changed (hover to highlight, click to fly there) and one ↩ button that undoes the turn.
+- **Icon-first panel.** One bubble per chat in the owner's color with a small ✦; a spinning ring means working, a
+  number means messages waiting, grey with ⏸ means paused. ＋ starts a chat, the clock opens History. Items an
+  agent just touched glow softly on the board. Agent status travels between the two computers as a small
+  `agentst` message that older copies ignore.
+
 ### History and revert
 
 - **Every change is kept,** whether you, Mo or an agent made it. History is synced, so you both see one timeline.

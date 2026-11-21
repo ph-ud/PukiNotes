@@ -77,6 +77,7 @@ type peerConn struct {
 	outbound bool
 	since    time.Time
 	latency  time.Duration
+	agent    json.RawMessage // their agent's status: {bound,name,listening,…}
 	closed   chan struct{}
 	once     sync.Once
 }
@@ -249,6 +250,9 @@ func (pm *PeerManager) Status() []map[string]any {
 		if c, ok := pm.conns[p.ID]; ok {
 			st["online"] = true
 			st["latency_ms"] = c.latency.Milliseconds()
+			if len(c.agent) > 0 {
+				st["agent"] = c.agent
+			}
 		}
 		out = append(out, st)
 	}
@@ -558,6 +562,9 @@ func (pm *PeerManager) run(pc *peerConn) {
 		pc.send(Msg{T: "addr", Text: myAddr})
 	}
 	pc.send(Msg{T: "profile", Data: jsonRaw(pm.app.id.Profile())})
+	if pm.app.agent != nil {
+		pc.send(Msg{T: "agentst", Data: jsonRaw(pm.app.agent.Status())})
+	}
 	// initial sync: tell them what we have for each shared board
 	for _, b := range pm.boardsWith(pc.peerID) {
 		if bd := pm.app.store.Get(b); bd != nil {
@@ -609,6 +616,12 @@ func (pm *PeerManager) handle(pc *peerConn, m Msg) {
 			}
 			pm.mu.Unlock()
 		}
+		return
+	case "agentst": // older copies never send this, and ignore it (no board)
+		pm.mu.Lock()
+		pc.agent = append(json.RawMessage(nil), m.Data...)
+		pm.mu.Unlock()
+		pm.broadcastPeers()
 		return
 	case "profile":
 		var p Person
@@ -714,6 +727,19 @@ func (pm *PeerManager) SendProfile() {
 	pm.mu.Unlock()
 	for _, c := range cs {
 		c.send(Msg{T: "profile", Data: jsonRaw(p)})
+	}
+}
+
+// SendAgent tells every connected partner how this computer's agent is doing.
+func (pm *PeerManager) SendAgent(st json.RawMessage) {
+	pm.mu.Lock()
+	var cs []*peerConn
+	for _, c := range pm.conns {
+		cs = append(cs, c)
+	}
+	pm.mu.Unlock()
+	for _, c := range cs {
+		c.send(Msg{T: "agentst", Data: st})
 	}
 }
 
