@@ -28,7 +28,8 @@ Point your AI agent at this repo and say:
 > **launch PukiNotes**
 
 Your agent reads [`AGENTS.md`](AGENTS.md), sets things up (Go is the only requirement), opens the app and binds
-itself to it. Then ask it things in the ✦ panel, or write `@ai` in any comment on the board. That work runs in
+itself to it. It also puts a **PukiNotes** app in your Applications (or Start menu): next time, just click it.
+PukiNotes opens in its own window, and your agent starts and binds itself. Then ask it things in the ✦ panel, or write `@ai` in any comment on the board. That work runs in
 **your** agent's session, on your plan. Your partner's `@ai` goes to **their** agent.
 
 <p align="center">
@@ -56,7 +57,8 @@ The app explains itself with icons; hover anything for a hint. The shortcuts:
 ## By hand
 
 ```
-go run ./cmd/pukinotes start      # opens PukiNotes in your browser
+go run ./cmd/pukinotes start      # opens PukiNotes in its own window
+go run ./cmd/pukinotes install    # makes the PukiNotes app (add --agent 'claude "launch PukiNotes"')
 go run ./cmd/pukinotes doctor     # checks everything
 go run ./cmd/pukinotes update     # same as Update now
 go run ./cmd/pukinotes stop

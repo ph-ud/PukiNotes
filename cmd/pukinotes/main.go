@@ -1,6 +1,8 @@
 // Command pukinotes is a cozy, local-first whiteboard for two.
 //
 //	go run ./cmd/pukinotes start      launch (prints one JSON line with url, mcp, bind_code)
+//	go run ./cmd/pukinotes open       what the app shortcut runs: start in the background, show the window, start the agent
+//	go run ./cmd/pukinotes install    make the PukiNotes app shortcut (--agent CMD, --dock, --uninstall)
 //	go run ./cmd/pukinotes status     show the running PukiNotes
 //	go run ./cmd/pukinotes stop       stop it
 //	go run ./cmd/pukinotes tool NAME --json '{...}'   call an agent tool (or: tool --list)
@@ -31,7 +33,7 @@ import (
 	"time"
 )
 
-const version = "0.2.7"
+const version = "0.2.8"
 const defaultPort = 47321
 
 type session struct {
@@ -98,6 +100,10 @@ func main() {
 		out, err := apiPost(s, "join", map[string]string{"code": strings.Join(args, "")})
 		exitOn(err)
 		os.Stdout.Write(out)
+	case "open":
+		cmdOpen(args)
+	case "install":
+		cmdInstall(args)
 	case "tool":
 		cmdTool(args)
 	case "doctor":
@@ -117,6 +123,8 @@ func main() {
 const helpText = `pukinotes: a cozy, local-first whiteboard for two. See AGENTS.md.
 
   start [--port N] [--no-open]   launch PukiNotes (keeps running; prints a JSON line)
+  open [--no-agent]              start PukiNotes in the background if needed and show its window
+  install [--agent CMD] [--dock] make the PukiNotes app shortcut (--uninstall removes it)
   status | stop | bind-code      manage the running PukiNotes
   update [--stash]               git pull main, rebuild and restart (keeps the window and agent)
   tool --list | tool NAME --json '{...}'   call an agent tool
@@ -213,7 +221,7 @@ func cmdTool(args []string) {
 func cmdStart(args []string) {
 	fs := flag.NewFlagSet("start", flag.ExitOnError)
 	port := fs.Int("port", 0, "local port (default 47321, or PUKINOTES_PORT)")
-	noOpen := fs.Bool("no-open", false, "don't open a browser window")
+	noOpen := fs.Bool("no-open", false, "don't open the PukiNotes window")
 	fs.Parse(args)
 	if *port == 0 {
 		*port = defaultPort
@@ -228,7 +236,11 @@ func cmdStart(args []string) {
 
 	// Already running? Print its session and leave it alone.
 	if s, err := readSession(); err == nil && !afterUpdate {
-		if _, err := apiGet(s, "status"); err == nil {
+		if st, err := apiGet(s, "status"); err == nil {
+			var open struct {
+				UIOpen bool `json:"ui_open"`
+			}
+			json.Unmarshal(st, &open)
 			if b, err := apiGet(s, "bindcode"); err == nil {
 				var bc struct {
 					BindCode string `json:"bind_code"`
@@ -238,8 +250,8 @@ func cmdStart(args []string) {
 			}
 			out, _ := json.Marshal(map[string]any{"url": s.URL, "mcp": s.MCP, "bind_code": s.BindCode, "pid": s.PID, "already_running": true})
 			fmt.Println(string(out))
-			if !*noOpen {
-				openBrowser(s.URL)
+			if !*noOpen && !open.UIOpen { // a window is already showing; don't stack a second one
+				openWindow(s.URL)
 			}
 			return
 		}
@@ -291,7 +303,7 @@ func cmdStart(args []string) {
 		a.Shutdown()
 	}()
 	if !*noOpen {
-		go func() { time.Sleep(300 * time.Millisecond); openBrowser(s.URL) }()
+		go func() { time.Sleep(300 * time.Millisecond); openWindow(s.URL) }()
 	}
 	err = a.Serve(ln)
 	if s, e := readSession(); e == nil && s.PID == os.Getpid() { // after an update it belongs to the new copy
