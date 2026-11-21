@@ -114,6 +114,8 @@ type PeerManager struct {
 	backoff  map[string]time.Duration
 	region   *tailcfg.DERPRegion
 	closed   bool
+
+	relayProblem string // set at start when the relays can't work on this network
 }
 
 func newPeerManager(a *App) *PeerManager {
@@ -209,6 +211,17 @@ func (pm *PeerManager) startServer() error {
 	return nil
 }
 
+// waitingForFirstPeer reports whether this copy has partners but no boards
+// yet and nobody connected: a fresh sandbox restored from PUKINOTES_STATE.
+func (pm *PeerManager) waitingForFirstPeer() bool {
+	if len(pm.app.store.List()) > 0 {
+		return false
+	}
+	pm.mu.Lock()
+	defer pm.mu.Unlock()
+	return len(pm.known) > 0 && len(pm.conns) == 0
+}
+
 func (pm *PeerManager) isClosed() bool {
 	pm.mu.Lock()
 	defer pm.mu.Unlock()
@@ -237,6 +250,9 @@ func (pm *PeerManager) Close() {
 func (pm *PeerManager) NetStatus() map[string]any {
 	pm.mu.Lock()
 	defer pm.mu.Unlock()
+	if pm.relayProblem != "" {
+		return map[string]any{"ready": false, "error": pm.relayProblem}
+	}
 	return map[string]any{"ready": pm.srv != nil, "error": pm.netErr}
 }
 

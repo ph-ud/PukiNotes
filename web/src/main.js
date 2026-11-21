@@ -42,6 +42,8 @@ const BOARD_SCHEMA = 1; // bump only with a migration in migrateBoard(); new opt
 
 /* =================== connection to the PukiNotes process =================== */
 const params = new URLSearchParams(location.search);
+// ?b=<board> opens that board, ?fit=1 fits the view to its content, ?snap=1 marks a screenshot taker (pukinotes screenshot)
+const openBoard = params.get('b'), fitOnOpen = params.get('fit') === '1', snap = params.get('snap') === '1';
 let token = params.get('t');
 if (token){ try { sessionStorage.setItem('pukinotes-token', token); } catch(e){} history.replaceState(null, '', location.pathname); }
 else { try { token = sessionStorage.getItem('pukinotes-token'); } catch(e){} }
@@ -52,7 +54,7 @@ function send(m){
 }
 function connect(){
   if (!token){ $('#connLost').textContent = 'Open PukiNotes from the link printed by `pukinotes start`'; $('#connLost').classList.add('show'); return; }
-  ws = new WebSocket(`ws://${location.host}/ws?t=${encodeURIComponent(token)}`);
+  ws = new WebSocket(`ws://${location.host}/ws?t=${encodeURIComponent(token)}${snap ? '&snap=1' : ''}`);
   ws.onopen = () => { if (reloadOnReconnect){ location.reload(); return; } $('#connLost').classList.remove('show'); };
   ws.onmessage = e => onMsg(JSON.parse(e.data));
   ws.onclose = () => { $('#connLost').classList.add('show'); setTimeout(connect, 1000); };
@@ -168,8 +170,9 @@ function switchBoard(id){
 }
 
 function start(){
-  let id = ls.get('pukinotes-current');
+  let id = openBoard && boards.has(openBoard) ? openBoard : ls.get('pukinotes-current');
   if (!id || !boards.has(id)) id = boardsMeta.length ? boardsMeta[0].id : null;
+  if (!id && snap) return;
   if (!id){
     const b = createBoard('Our first board');
     seedWelcome(b);
@@ -177,6 +180,18 @@ function start(){
   }
   switchBoard(id);
   renderBoards();
+  if (fitOnOpen) requestAnimationFrame(() => fitView());
+}
+
+// Fit the view to everything on the board (also ⇧1).
+function fitView(glide){
+  const list = itemsList();
+  if (!list.length) return;
+  let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+  for (const it of list){ const b = bbox(it); x0 = Math.min(x0, b.x); y0 = Math.min(y0, b.y); x1 = Math.max(x1, b.x + b.w); y1 = Math.max(y1, b.y + b.h); }
+  const pad = 80, z = clamp(Math.min((innerWidth - 2*pad)/Math.max(x1 - x0, 1), (innerHeight - 2*pad - 60)/Math.max(y1 - y0, 1)), .15, 1.25);
+  view = {x: innerWidth/2 - (x0 + x1)/2*z, y: (innerHeight + 60)/2 - (y0 + y1)/2*z, z};
+  applyView(glide);
 }
 
 const WELCOME = `Welcome to PukiNotes ☕\nDouble-click to write.\nPaste a photo with ⌘V.\nPress T for a table.\nWrite @ai in a comment to ask your agent.`;
@@ -959,6 +974,7 @@ addEventListener('keydown', e => {
   const mod = e.metaKey || e.ctrlKey;
   if (mod && e.key.toLowerCase() === 'z'){ e.preventDefault(); e.shiftKey ? cur.undo.redo() : cur.undo.undo(); return; }
   if (mod && e.key.toLowerCase() === 'y'){ e.preventDefault(); cur.undo.redo(); return; }
+  if (e.shiftKey && !mod && e.code === 'Digit1'){ e.preventDefault(); fitView(true); return; }
   if (mod && e.key === '0'){ e.preventDefault(); zoomAt(innerWidth/2, innerHeight/2, 1/view.z, true); return; }
   if (mod && (e.key === '=' || e.key === '+')){ e.preventDefault(); zoomAt(innerWidth/2, innerHeight/2, 1.25, true); return; }
   if (mod && e.key === '-'){ e.preventDefault(); zoomAt(innerWidth/2, innerHeight/2, .8, true); return; }

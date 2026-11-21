@@ -184,7 +184,11 @@ func (u *Updater) Apply(stash bool) {
 		exe += ".exe"
 	}
 	os.MkdirAll(filepath.Dir(exe), 0o700)
-	b := exec.Command("go", "build", "-o", exe+".new", "./cmd/pukinotes")
+	build := []string{"build", "-o", exe + ".new"}
+	if wsRelays {
+		build = append(build, "-tags", "ts_debug_websockets")
+	}
+	b := exec.Command("go", append(build, "./cmd/pukinotes")...)
 	b.Dir = u.repo
 	if out, err := b.CombinedOutput(); err != nil {
 		u.git("reset", "--keep", old) // back to the version that works

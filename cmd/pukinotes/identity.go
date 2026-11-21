@@ -61,6 +61,14 @@ func loadIdentity(home string) (*Identity, error) {
 }
 
 func defaultName() string {
+	if n := strings.TrimSpace(os.Getenv("PUKINOTES_NAME")); n != "" {
+		return n
+	}
+	if headlessWanted() { // a cloud sandbox: "root" isn't a name
+		if u, err := user.Current(); err != nil || u.Username == "root" {
+			return "Cloud"
+		}
+	}
 	if u, err := user.Current(); err == nil {
 		n := u.Name
 		if n == "" {
