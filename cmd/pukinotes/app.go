@@ -140,6 +140,12 @@ func (a *App) routes() http.Handler {
 	files := http.FileServer(http.FS(sub))
 	mux.Handle("/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Cache-Control", "no-cache")
+		// In preview mode (a sandbox's app preview, which opens the bare address)
+		// the start page hands out the token. Only for sandboxes: see CLOUD.md.
+		if previewMode() && r.URL.Path == "/" && r.URL.Query().Get("t") == "" {
+			http.Redirect(w, r, "/?t="+a.token, http.StatusFound)
+			return
+		}
 		files.ServeHTTP(w, r)
 	}))
 	mux.HandleFunc("/ws", a.handleWS)
@@ -230,7 +236,9 @@ func (a *App) handleWS(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "bad token", http.StatusUnauthorized)
 		return
 	}
-	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{OriginPatterns: []string{"127.0.0.1:*", "localhost:*"}})
+	// Behind a preview proxy (PUKINOTES_LISTEN set) the page comes from the proxy's
+	// address, so any origin is accepted; the session token above still guards it.
+	conn, err := websocket.Accept(w, r, &websocket.AcceptOptions{OriginPatterns: []string{"127.0.0.1:*", "localhost:*"}, InsecureSkipVerify: listenHost() != "127.0.0.1"})
 	if err != nil {
 		return
 	}

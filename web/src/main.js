@@ -57,7 +57,7 @@ function send(m){
 }
 function connect(){
   if (!token){ $('#connLost').textContent = 'Open PukiNotes from the link printed by `pukinotes start`'; $('#connLost').classList.add('show'); return; }
-  ws = new WebSocket(`ws://${location.host}/ws?t=${encodeURIComponent(token)}${snap ? '&snap=1' : ''}`);
+  ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws?t=${encodeURIComponent(token)}${snap ? '&snap=1' : ''}`);
   ws.onopen = () => { if (reloadOnReconnect){ location.reload(); return; } $('#connLost').classList.remove('show'); };
   ws.onmessage = e => onMsg(JSON.parse(e.data));
   ws.onclose = () => { $('#connLost').classList.add('show'); setTimeout(connect, 1000); };
@@ -729,8 +729,34 @@ function track(onMove, onUp){
   const up = e => { removeEventListener('pointermove', mv); removeEventListener('pointerup', up); removeEventListener('pointercancel', up); onUp && onUp(e); };
   addEventListener('pointermove', mv); addEventListener('pointerup', up); addEventListener('pointercancel', up);
 }
+// Touch: two fingers pan and pinch-zoom, whatever the tool. The first finger's
+// gesture (a stroke, a drag) is cancelled when the second one lands.
+const touches = new Map(); let pinch = null;
+vp.addEventListener('pointerdown', e => {
+  if (e.pointerType !== 'touch') return;
+  touches.set(e.pointerId, {x: e.clientX, y: e.clientY});
+  if (touches.size === 2){
+    e.stopImmediatePropagation();
+    for (const id of touches.keys()) if (id !== e.pointerId) dispatchEvent(new PointerEvent('pointercancel', {pointerId: id, pointerType: 'touch'}));
+    const [a, b] = [...touches.values()];
+    pinch = {d: Math.hypot(a.x - b.x, a.y - b.y) || 1, cx: (a.x + b.x)/2, cy: (a.y + b.y)/2, view: {...view}};
+  } else if (touches.size > 2) e.stopImmediatePropagation();
+}, true);
+addEventListener('pointermove', e => {
+  if (!touches.has(e.pointerId)) return;
+  touches.set(e.pointerId, {x: e.clientX, y: e.clientY});
+  if (!pinch || touches.size < 2) return;
+  const [a, b] = [...touches.values()];
+  const d = Math.hypot(a.x - b.x, a.y - b.y) || 1, cx = (a.x + b.x)/2, cy = (a.y + b.y)/2;
+  const z = clamp(pinch.view.z * d/pinch.d, .15, 4), k = z/pinch.view.z;
+  view = {x: cx - (pinch.cx - pinch.view.x)*k, y: cy - (pinch.cy - pinch.view.y)*k, z};
+  applyView();
+}, {passive: true});
+const touchUp = e => { touches.delete(e.pointerId); if (touches.size < 2) pinch = null; };
+addEventListener('pointerup', touchUp); addEventListener('pointercancel', e => { if (e.isTrusted) touchUp(e); });
 vp.addEventListener('pointerdown', e => {
   if (!cur) return;
+  if (pinch) return;
   lastPointer = {x: e.clientX, y: e.clientY};
   const rz = e.button === 0 && e.target.closest('.cres, .rres, .tres');
   if (rz && (tool === 'select' || tool === 'hand')) return startTableResize(e, rz);

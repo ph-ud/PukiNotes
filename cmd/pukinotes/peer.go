@@ -200,8 +200,22 @@ func (pm *PeerManager) startServer() error {
 			return pm.handleInbound
 		},
 	}
+	// Keep the relay picked the first time, so our tailcat address (which
+	// names the relay) stays the same across restarts.
+	pinned := pm.region == nil && pm.app.cfg.DERPMapURL == "" && id.SavedRelay() != nil
+	if pinned {
+		s.Region = id.SavedRelay()
+	}
 	if err := s.Start(); err != nil {
+		if pinned { // that relay is gone: pick the nearest one again next try
+			id.SetRelay(nil)
+		}
 		return err
+	}
+	if !pinned && pm.region == nil && pm.app.cfg.DERPMapURL == "" {
+		if ci, err := tailcat.ParseAddr(s.TailcatAddr()); err == nil && len(ci.Region) == 1 {
+			id.SetRelay(ci.Region[0])
+		}
 	}
 	pm.mu.Lock()
 	pm.srv = s

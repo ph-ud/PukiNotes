@@ -103,6 +103,20 @@ as a `data:image/png;base64,…` image, with a title like the board's name, whic
 phone. Update the same Artifact after each change, so the human keeps one link. If you can attach files to a reply
 instead, attach the PNG.
 
+### The live app, if your chat app can open a port
+
+Some chat apps can open a port of the sandbox as a live preview. Then your human can use PukiNotes itself, by touch:
+one finger draws, drags or taps, two fingers pan and pinch-zoom, and the layout fits a phone. Start PukiNotes in
+preview mode and point the preview at its port (47321 unless you changed it):
+
+```
+PUKINOTES_PREVIEW=1 go run ./cmd/pukinotes start
+```
+
+In preview mode PukiNotes listens on every address of the sandbox and its bare address opens the board without the
+token, because the preview can't add one. **Only use it inside a sandbox**, never on a computer on a shared network.
+`PUKINOTES_LISTEN=0.0.0.0` alone listens on every address but keeps the token.
+
 ## 6. Troubleshooting
 
 | What you see | What to do |
@@ -113,4 +127,5 @@ instead, attach the PNG.
 | `join`: "not paired" / "invite code isn't valid anymore" | Ask for the current code (Share). |
 | Board tools time out | The headless window died; PukiNotes restarts it within ~20 s. Check `doctor`. |
 | `PUKINOTES_STATE: … damaged` | The variable was cut while copying. Export it again from a working session. |
+| Partner never connects after both restarted | Both copies must run this version or newer: it keeps each copy's relay, so their addresses stay the same. |
 | "port 47321 is busy" | A copy is already running: `go run ./cmd/pukinotes status`. |

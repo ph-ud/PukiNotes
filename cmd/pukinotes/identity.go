@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"github.com/tailscale/tailcat"
+	"tailscale.com/tailcfg"
 	"tailscale.com/types/key"
 )
 
@@ -25,6 +26,11 @@ type Identity struct {
 	ServerKey key.NodePrivate      `json:"server_key"`
 	PSK       tailcat.PresharedKey `json:"psk"`
 	ClientKey key.NodePrivate      `json:"client_key"`
+	// Relay is the tailcat relay this copy settled on the first time.
+	// Keeping it keeps our tailcat address the same across restarts, so a
+	// partner whose copy was also restarted (or a fresh cloud sandbox) can
+	// still find us.
+	Relay *tailcfg.DERPRegion `json:"relay,omitempty"`
 }
 
 // Config holds optional settings from <home>/config.json.
@@ -94,6 +100,19 @@ func (id *Identity) save() error {
 		return err
 	}
 	return os.Rename(tmp, id.path)
+}
+
+func (id *Identity) SavedRelay() *tailcfg.DERPRegion {
+	id.mu.Lock()
+	defer id.mu.Unlock()
+	return id.Relay
+}
+
+func (id *Identity) SetRelay(r *tailcfg.DERPRegion) {
+	id.mu.Lock()
+	defer id.mu.Unlock()
+	id.Relay = r
+	id.save()
 }
 
 func (id *Identity) Profile() Person {

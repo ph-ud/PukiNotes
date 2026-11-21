@@ -29,6 +29,25 @@ import (
 	"time"
 )
 
+// listenHost is the address PukiNotes listens on. It is 127.0.0.1 unless
+// PUKINOTES_LISTEN says otherwise (for example 0.0.0.0, so a sandbox's app
+// preview can reach it). Every page, API call and socket still needs the token.
+func listenHost() string {
+	if h := strings.TrimSpace(os.Getenv("PUKINOTES_LISTEN")); h != "" {
+		return h
+	}
+	if previewMode() {
+		return "0.0.0.0"
+	}
+	return "127.0.0.1"
+}
+
+// previewMode (PUKINOTES_PREVIEW=1) is for a sandbox whose chat app can open
+// a port of the sandbox: PukiNotes listens on every address and the bare
+// address opens the board without the token. Never use it on a computer on a
+// shared network.
+func previewMode() bool { return os.Getenv("PUKINOTES_PREVIEW") == "1" }
+
 // headlessWanted reports whether the PukiNotes window should be a headless browser.
 func headlessWanted() bool {
 	switch os.Getenv("PUKINOTES_WINDOW") {

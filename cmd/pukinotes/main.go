@@ -270,10 +270,11 @@ func cmdStart(args []string) {
 		}
 	}
 
-	ln, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", *port))
+	host := listenHost()
+	ln, err := net.Listen("tcp", net.JoinHostPort(host, strconv.Itoa(*port)))
 	for i := 0; err != nil && afterUpdate && i < 150; i++ { // the old copy is still letting go of the port
 		time.Sleep(100 * time.Millisecond)
-		ln, err = net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", *port))
+		ln, err = net.Listen("tcp", net.JoinHostPort(host, strconv.Itoa(*port)))
 	}
 	if err != nil {
 		exitOn(fmt.Errorf("port %d is busy (another app?). Try: pukinotes start --port %d", *port, *port+1))
