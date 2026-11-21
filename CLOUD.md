@@ -16,7 +16,8 @@ boards to sync. Nothing here needs an account or a server.
 
 ## 1. Network (once per environment)
 
-The sandbox must be allowed to reach tailcat's relays. Ask your human to allow these hosts in the environment's
+The sandbox must be allowed to reach tailcat's relays. Start PukiNotes first (§2): if `doctor` shows the relay as up,
+skip this. Only if it says "Forbidden" or "no rule … allows this host", ask your human to allow these hosts in the environment's
 network settings (in Claude Code on the web: the environment's **Network access → Allowed domains**). If you have a
 tool that edits your environment's allowed hosts, propose the change yourself.
 
@@ -48,7 +49,8 @@ go run ./cmd/pukinotes start        # run it in the background; it keeps running
 - With no screen, PukiNotes keeps its window open **headless** by itself (it uses Chrome or Chromium; set
   `PUKINOTES_BROWSER=/path/to/chromium` if it can't find one). The board tools need that window, so don't kill it.
 - `go run ./cmd/pukinotes doctor` must show the relay as up and a window as open.
-- Bind yourself exactly as in [AGENTS.md §3](AGENTS.md#3-bind-yourself-to-pukinotes) (MCP or the `tool` command line).
+- Bind yourself as in [AGENTS.md §3](AGENTS.md#3-bind-yourself-to-pukinotes) (MCP or the `tool` command line). The
+  board tools need the binding. You don't need the `next_request` loop: your human asks you in the chat (§4).
 
 ## 3. Connect to your human's boards
 
@@ -91,10 +93,10 @@ Your human can't open `127.0.0.1` from their phone. Take a picture of the board 
 
 ```
 go run ./cmd/pukinotes screenshot --out board.png                  # the shared board; --board ID for another
-go run ./cmd/pukinotes screenshot --size 600x900 --out board.png   # taller, for a phone (600 is the narrowest)
+go run ./cmd/pukinotes screenshot --size 600x900 --out board.png   # other shape (default 1280x860, narrowest 600)
 ```
 
-It fits the view to everything on the board and renders the real app at 2× resolution (it creates the folder for
+The default size reads best on a phone too (the picture can be zoomed). It fits the view to everything on the board and renders the real app at 2× resolution (it creates the folder for
 `--out` if needed). Then show it in the chat the
 way your product shows pictures or pages. In Claude, publish an **Artifact**: a small HTML page with the PNG inlined
 as a `data:image/png;base64,…` image, with a title like the board's name, which opens right inside the chat on the
