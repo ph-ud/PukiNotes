@@ -21,6 +21,19 @@ runs in **your** session, on your human's plan.
    `GOTOOLCHAIN=auto`.
 3. The UI is already built and included (`cmd/pukinotes/ui`). Node.js is **not** needed. Only if someone changed
    `web/src` do you rebuild it: `go run ./cmd/pukinotes setup` (needs npm).
+4. **Make the PukiNotes app** so your human can open it like any other app, without you:
+
+   ```
+   go run ./cmd/pukinotes install --agent '<command that starts you with the prompt "launch PukiNotes">'
+   ```
+
+   Use your own CLI for `--agent`, for example `claude "launch PukiNotes"` (Claude Code),
+   `codex "launch PukiNotes"` (Codex) or `gemini -i "launch PukiNotes"` (Gemini CLI). Leave `--agent` out if your
+   agent has no command line. This puts **PukiNotes** in Applications (macOS), the Start menu and desktop
+   (Windows) or the app menu (Linux), with the PukiNotes icon. Clicking it starts PukiNotes, opens its window, and,
+   when no agent is listening, opens a terminal window running that command, so the agent launches PukiNotes and
+   binds itself. On macOS, **ask your human** whether they also want it in the Dock, and if so add `--dock`.
+   Run `install` again any time to change the command; `install --uninstall` removes the app.
 
 ## 2. Launch
 
@@ -29,16 +42,18 @@ go run ./cmd/pukinotes start
 ```
 
 - Run it as a **background / long-running process**. It keeps running while PukiNotes is open.
-- It opens PukiNotes in a browser window and prints one JSON line on stdout:
+- It opens PukiNotes in its own app window (Chrome, Edge or Brave in app mode: no tabs, no address bar; a normal
+  browser tab if none of those is installed) and prints one JSON line on stdout:
 
 ```json
 {"url":"http://127.0.0.1:47321/?t=…","mcp":"http://127.0.0.1:47321/mcp/…","bind_code":"otter-17","pid":1234}
 ```
 
 - The same info is written to `~/.pukinotes/session.json`, so you can find it later. If PukiNotes is already running,
-  `start` prints that session (with `"already_running": true`) and opens the window again.
+  `start` prints that session (with `"already_running": true`) and shows the window if none is open.
+  When your human clicked the PukiNotes app, this is what you'll see: just bind (step 3) and loop.
 - PukiNotes only listens on `127.0.0.1`, and every URL carries the session token. Never expose the port.
-- **Keep the PukiNotes browser window open.** The board lives in that window, so the board tools only work while
+- **Keep the PukiNotes window open.** The board lives in that window, so the board tools only work while
   it is open. `go run ./cmd/pukinotes doctor` checks this and everything else.
 - Flags: `--port N` (default 47321, or `PUKINOTES_PORT`), `--no-open`. Data lives in `~/.pukinotes` (or `PUKINOTES_HOME`).
 
@@ -51,6 +66,8 @@ the human's AI requests to you.
    server. Examples (check your agent's docs, since commands change):
    - Claude Code: `claude mcp add --transport http pukinotes <mcp-url>`
    - Other agents: add an HTTP MCP server named `pukinotes` with that URL to your MCP config.
+   The MCP URL changes each time PukiNotes starts, so if you already have a `pukinotes` server with an older URL,
+   replace it (or use the command line below, which always finds the running PukiNotes).
 2. Call **`pukinotes_bind`** with `{ "code": "<bind_code>", "agent": "<your product name>", "model": "<your model, if known>" }`.
 3. Tell your human: "I'm bound to PukiNotes. Start a chat in the ✦ panel, or write @ai in any comment."
 
@@ -162,5 +179,8 @@ Exact schemas: `pukinotes_*` tools describe themselves over MCP, and `go run ./c
 - **"Partner is on another version":** only a change to the sync protocol blocks syncing. Both humans click **Update now**.
 - **Can't reach the partner:** run `go run ./cmd/pukinotes doctor`, which checks the window, the tailcat relay, the
   binding and each partner. Both PukiNotes apps must be running; they reconnect on their own within a minute.
-- **Board tools time out:** the PukiNotes window is closed. Open the `url` from `~/.pukinotes/session.json`.
+- **Board tools time out:** the PukiNotes window is closed. Run `go run ./cmd/pukinotes open` (or click the
+  PukiNotes app) to show it again.
+- **Window:** `PUKINOTES_WINDOW=browser` forces a normal browser tab; `PUKINOTES_BROWSER=/path/to/chrome` picks
+  the browser for the app window. The app window keeps its own small profile in `~/.pukinotes/window`.
 - **Logs:** start with `PUKINOTES_DEBUG=1` to print tailcat details.
