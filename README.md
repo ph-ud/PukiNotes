@@ -67,6 +67,7 @@ go run ./cmd/pukinotes stop
 ## What's in the repo
 
 - [`AGENTS.md`](AGENTS.md): the launch and binding procedure, written for agents (`CLAUDE.md` points to it)
+- [`CLOUD.md`](CLOUD.md): the same for agents in cloud sandboxes, so you can use PukiNotes from a chat on your phone
 - `cmd/pukinotes/`: the app. One Go program: local web server, tailcat peer sync, and the agent tools (MCP + CLI).
   The built UI is embedded.
 - `web/`: UI source (Yjs + plain JS). Only needed if you change the UI.

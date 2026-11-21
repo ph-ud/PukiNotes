@@ -9,6 +9,10 @@ PukiNotes is a local-first whiteboard for two people. Each person runs PukiNotes
 person's **own agent** (you) is their AI helper inside the app. PukiNotes never calls an AI API itself. All AI work
 runs in **your** session, on your human's plan.
 
+> **Running in a cloud sandbox** (Claude Code on the web or in the Claude app, Codex cloud, any container with no
+> screen, or traffic through `HTTPS_PROXY`)? Follow **[CLOUD.md](CLOUD.md)** instead: it pairs a copy in your sandbox
+> with your human's PukiNotes and shows them the board in the chat.
+
 ---
 
 ## 1. Setup (once per computer)

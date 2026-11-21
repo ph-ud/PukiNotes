@@ -18,6 +18,9 @@ import (
 
 // openWindow shows PukiNotes at url. It reports which way it opened: "app" or "browser".
 func openWindow(url string) string {
+	if headlessWanted() {
+		return "headless" // the running PukiNotes keeps its own headless window (cloud.go)
+	}
 	if os.Getenv("PUKINOTES_WINDOW") != "browser" {
 		if exe := appBrowser(); exe != "" {
 			c := exec.Command(exe,

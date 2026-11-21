@@ -55,6 +55,7 @@ type uiClient struct {
 	conn *websocket.Conn
 	out  chan []byte
 	seen time.Time
+	snap bool // a screenshot taker (pukinotes screenshot), not a window for the agent
 }
 
 func (a *App) broadcast(m Msg, except *uiClient) {
@@ -78,6 +79,9 @@ func (a *App) anyClient() *uiClient {
 	defer a.mu.Unlock()
 	var best *uiClient
 	for c := range a.clients {
+		if c.snap {
+			continue
+		}
 		if best == nil || c.seen.After(best.seen) {
 			best = c
 		}
@@ -101,6 +105,21 @@ func (a *App) boardList() []map[string]any {
 		out = append(out, map[string]any{"id": b.ID, "name": b.GetName(), "shared_with": a.peers.SharedWith(b.ID)})
 	}
 	return out
+}
+
+// defaultBoard is the board to use when none is named: the first one shared
+// with a partner, else the first one.
+func (a *App) defaultBoard() string {
+	first := ""
+	for _, b := range a.store.List() {
+		if len(a.peers.SharedWith(b.ID)) > 0 {
+			return b.ID
+		}
+		if first == "" {
+			first = b.ID
+		}
+	}
+	return first
 }
 
 func (a *App) helloData() json.RawMessage {
@@ -147,7 +166,7 @@ func (a *App) handleAPI(w http.ResponseWriter, r *http.Request) {
 	enc.SetIndent("", "  ")
 	switch parts[1] {
 	case "status":
-		enc.Encode(map[string]any{"ok": true, "version": version, "me": a.id.Profile(), "boards": a.boardList(),
+		enc.Encode(map[string]any{"ok": true, "version": version, "me": a.id.Profile(), "boards": a.boardList(), "default_board": a.defaultBoard(),
 			"peers": a.peers.Status(), "net": a.peers.NetStatus(), "agent": a.agent.Status(), "ui_open": a.anyClient() != nil, "update": a.updater.Status()})
 	case "update":
 		// check, then update if main has something new (restarts PukiNotes)
@@ -173,6 +192,18 @@ func (a *App) handleAPI(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		enc.Encode(map[string]any{"ok": true, "board": board})
+	case "ask":
+		// The human asked their agent outside PukiNotes (for example in a cloud
+		// agent's chat): file it as a request, already taken by the agent.
+		var req struct{ Board, Text string }
+		json.NewDecoder(r.Body).Decode(&req)
+		rq, err := a.agent.Ask(req.Board, req.Text)
+		if err != nil {
+			w.WriteHeader(400)
+			enc.Encode(map[string]any{"ok": false, "error": err.Error()})
+			return
+		}
+		enc.Encode(map[string]any{"ok": true, "request": rq, "hint": "Act with the pukinotes_* tools passing this request_id, then pukinotes_reply."})
 	case "tools":
 		enc.Encode(toolDefs())
 	case "tool":
@@ -204,7 +235,7 @@ func (a *App) handleWS(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	conn.SetReadLimit(64 << 20)
-	c := &uiClient{conn: conn, out: make(chan []byte, 4096), seen: time.Now()}
+	c := &uiClient{conn: conn, out: make(chan []byte, 4096), seen: time.Now(), snap: r.URL.Query().Get("snap") == "1"}
 	ctx, cancel := context.WithCancel(r.Context())
 	defer cancel()
 	go func() {

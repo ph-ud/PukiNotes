@@ -10,6 +10,9 @@
 //	go run ./cmd/pukinotes bind-code  print a fresh bind code
 //	go run ./cmd/pukinotes update     pull main, rebuild, restart in place
 //	go run ./cmd/pukinotes doctor     check the setup and the connection
+//	go run ./cmd/pukinotes ask TEXT   file a request from the human (agents that chat outside PukiNotes)
+//	go run ./cmd/pukinotes screenshot picture of a board (cloud sandboxes: show it in the chat)
+//	go run ./cmd/pukinotes state      export / import identity and pairings (cloud sandboxes; see CLOUD.md)
 //	go run ./cmd/pukinotes setup      rebuild the UI from web/ (optional; a built UI is included)
 package main
 
@@ -106,6 +109,12 @@ func main() {
 		cmdInstall(args)
 	case "tool":
 		cmdTool(args)
+	case "screenshot":
+		cmdScreenshot(args)
+	case "state":
+		cmdState(args)
+	case "ask":
+		cmdAsk(args)
 	case "doctor":
 		cmdDoctor()
 	case "setup":
@@ -129,6 +138,9 @@ const helpText = `pukinotes: a cozy, local-first whiteboard for two. See AGENTS.
   update [--stash]               git pull main, rebuild and restart (keeps the window and agent)
   tool --list | tool NAME --json '{...}'   call an agent tool
   join CODE                      join a board from an invite code
+  ask [--board ID] TEXT          file a request from your human (for agents chatting outside PukiNotes)
+  screenshot [--board ID] [--out F.png]   picture of a board, fitted to its content
+  state export | state import LINE        save / restore this copy's identity and pairings (cloud sandboxes)
   doctor                         check setup and connection
   setup                          rebuild the UI (optional)`
 
@@ -231,6 +243,7 @@ func cmdStart(args []string) {
 	}
 	home := pukinotesHome()
 	exitOn(os.MkdirAll(home, 0o700))
+	restoreStateFromEnv(home)
 	exitOn(ensureDataFormat(home))
 	afterUpdate := os.Getenv("PUKINOTES_WAIT_PORT") != ""
 
@@ -284,6 +297,10 @@ func cmdStart(args []string) {
 	reg, err := devDERPRegion()
 	exitOn(err)
 	a.peers.region = reg
+	if p := setupRelayTransport(); p != "" {
+		a.peers.relayProblem = p
+		log.Printf("pukinotes: %s", p)
+	}
 	a.peers.Start()
 
 	s := session{
@@ -302,7 +319,9 @@ func cmdStart(args []string) {
 		<-ch
 		a.Shutdown()
 	}()
-	if !*noOpen {
+	if headlessWanted() {
+		go a.keepHeadlessWindow(s.URL) // also after an update, which starts with --no-open
+	} else if !*noOpen {
 		go func() { time.Sleep(300 * time.Millisecond); openWindow(s.URL) }()
 	}
 	err = a.Serve(ln)
@@ -312,6 +331,29 @@ func cmdStart(args []string) {
 	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Fatal(err)
 	}
+}
+
+func cmdAsk(args []string) {
+	board := ""
+	var words []string
+	for i := 0; i < len(args); i++ {
+		if args[i] == "--board" && i+1 < len(args) {
+			board = args[i+1]
+			i++
+			continue
+		}
+		words = append(words, args[i])
+	}
+	if len(words) == 0 {
+		exitOn(errors.New(`usage: pukinotes ask [--board ID] "what your human asked for"`))
+	}
+	s := mustSession()
+	out, err := apiPost(s, "ask", map[string]string{"board": board, "text": strings.Join(words, " ")})
+	if err != nil {
+		os.Stderr.Write(out)
+		os.Exit(1)
+	}
+	os.Stdout.Write(out)
 }
 
 func openBrowser(url string) {

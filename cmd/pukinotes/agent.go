@@ -154,6 +154,31 @@ func (ag *Agent) Enqueue(r *Request) {
 	ag.broadcastStatus()
 }
 
+// Ask files a request the human made to their agent outside PukiNotes. It is
+// handed straight to the agent (state working), so it doesn't wait in the queue.
+func (ag *Agent) Ask(board, text string) (Request, error) {
+	text = strings.TrimSpace(text)
+	if text == "" {
+		return Request{}, errors.New("say what the request is")
+	}
+	if board == "" {
+		board = ag.app.defaultBoard()
+	} else if ag.app.store.Get(board) == nil {
+		return Request{}, errors.New("unknown board")
+	}
+	if board == "" {
+		return Request{}, errors.New("there are no boards yet")
+	}
+	r := &Request{ID: "r" + randHex(6), Board: board, Text: text, From: ag.app.id.Profile().ID}
+	ag.mu.Lock()
+	r.State, r.Created = "working", time.Now()
+	ag.queue = append(ag.queue, r)
+	ag.byID[r.ID] = r
+	ag.mu.Unlock()
+	ag.broadcastStatus()
+	return *r, nil
+}
+
 func (ag *Agent) resolve(id string, data json.RawMessage, errStr string) {
 	ag.mu.Lock()
 	ch := ag.rpcs[id]
