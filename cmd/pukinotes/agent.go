@@ -162,9 +162,7 @@ func (ag *Agent) Ask(board, text string) (Request, error) {
 		return Request{}, errors.New("say what the request is")
 	}
 	if board == "" {
-		if l := ag.app.store.List(); len(l) > 0 {
-			board = l[0].ID
-		}
+		board = ag.app.defaultBoard()
 	} else if ag.app.store.Get(board) == nil {
 		return Request{}, errors.New("unknown board")
 	}

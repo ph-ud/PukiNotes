@@ -55,7 +55,7 @@ go run ./cmd/pukinotes start        # run it in the background; it keeps running
 **If `PUKINOTES_STATE` is set** in your environment, PukiNotes restored its identity and pairings from it on start.
 Wait about 20 seconds; `doctor` should show the partner as connected and `status` should list their boards. Done.
 
-**Otherwise this is the first time.** Pair once:
+**Otherwise this is the first time.** The cloud copy has no boards until it joins one (that's expected). Pair once:
 
 1. Ask your human for their board's invite code: in PukiNotes on their computer, the orange **Share** button, top
    right. It starts with `pukinotes1-`.
@@ -77,7 +77,7 @@ Your human asks in the chat, not in PukiNotes's AI panel. File each ask as a req
 AGENTS.md (read the board, write with `request_id`, reply):
 
 ```
-go run ./cmd/pukinotes ask "plan the living room: sofa, rug, TV wall"     # add --board ID for a specific board
+go run ./cmd/pukinotes ask "plan the living room: sofa, rug, TV wall"     # the shared board; --board ID for another
 # → {"request": {"id": "r…", "board": "…"}, …}
 ```
 
@@ -90,11 +90,12 @@ to the agent on that computer, not to you.
 Your human can't open `127.0.0.1` from their phone. Take a picture of the board instead:
 
 ```
-go run ./cmd/pukinotes screenshot --out board.png             # first board; --board ID for another
-go run ./cmd/pukinotes screenshot --size 390x844 --out board.png   # phone-shaped
+go run ./cmd/pukinotes screenshot --out board.png                  # the shared board; --board ID for another
+go run ./cmd/pukinotes screenshot --size 600x900 --out board.png   # taller, for a phone (600 is the narrowest)
 ```
 
-It fits the view to everything on the board and renders the real app at 2× resolution. Then show it in the chat the
+It fits the view to everything on the board and renders the real app at 2× resolution (it creates the folder for
+`--out` if needed). Then show it in the chat the
 way your product shows pictures or pages. In Claude, publish an **Artifact**: a small HTML page with the PNG inlined
 as a `data:image/png;base64,…` image, with a title like the board's name, which opens right inside the chat on the
 phone. Update the same Artifact after each change, so the human keeps one link. If you can attach files to a reply

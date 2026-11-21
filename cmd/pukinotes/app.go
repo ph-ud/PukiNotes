@@ -107,6 +107,21 @@ func (a *App) boardList() []map[string]any {
 	return out
 }
 
+// defaultBoard is the board to use when none is named: the first one shared
+// with a partner, else the first one.
+func (a *App) defaultBoard() string {
+	first := ""
+	for _, b := range a.store.List() {
+		if len(a.peers.SharedWith(b.ID)) > 0 {
+			return b.ID
+		}
+		if first == "" {
+			first = b.ID
+		}
+	}
+	return first
+}
+
 func (a *App) helloData() json.RawMessage {
 	return jsonRaw(map[string]any{
 		"me":      a.id.Profile(),
@@ -151,7 +166,7 @@ func (a *App) handleAPI(w http.ResponseWriter, r *http.Request) {
 	enc.SetIndent("", "  ")
 	switch parts[1] {
 	case "status":
-		enc.Encode(map[string]any{"ok": true, "version": version, "me": a.id.Profile(), "boards": a.boardList(),
+		enc.Encode(map[string]any{"ok": true, "version": version, "me": a.id.Profile(), "boards": a.boardList(), "default_board": a.defaultBoard(),
 			"peers": a.peers.Status(), "net": a.peers.NetStatus(), "agent": a.agent.Status(), "ui_open": a.anyClient() != nil, "update": a.updater.Status()})
 	case "update":
 		// check, then update if main has something new (restarts PukiNotes)

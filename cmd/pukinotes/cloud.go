@@ -87,7 +87,7 @@ func (a *App) keepHeadlessWindow(url string) {
 	exited := make(chan struct{})
 	missing := 0
 	launch := func() {
-		cmd = exec.Command(exe, chromeArgs(true, url, filepath.Join(a.home, "window"), "--window-size=1440,920")...)
+		cmd = exec.Command(exe, chromeArgs(true, url+"&seed=0", filepath.Join(a.home, "window"), "--window-size=1440,920")...)
 		if cmd.Start() != nil {
 			cmd = nil
 			return
@@ -154,7 +154,7 @@ func cmdScreenshot(args []string) {
 			board = next()
 		case "--out", "-o":
 			out = next()
-		case "--size":
+		case "--size": // CSS pixels; the picture is twice that
 			fmt.Sscanf(next(), "%dx%d", &w, &h)
 		default:
 			exitOn(fmt.Errorf("usage: pukinotes screenshot [--board ID] [--out file.png] [--size 1280x860]"))
@@ -165,22 +165,24 @@ func cmdScreenshot(args []string) {
 		st, err := apiGet(s, "status")
 		exitOn(err)
 		var v struct {
-			Boards []struct {
-				ID string `json:"id"`
-			} `json:"boards"`
+			Board string `json:"default_board"`
 		}
 		json.Unmarshal(st, &v)
-		if len(v.Boards) == 0 {
+		if v.Board == "" {
 			exitOn(errors.New("there are no boards yet"))
 		}
-		board = v.Boards[0].ID
+		board = v.Board
 	}
+	// Headless Chrome won't make a window narrower than about 500 px: smaller
+	// sizes crop the page instead of laying it out for that width.
+	w, h = max(w, 600), max(h, 500)
 	exe := appBrowser()
 	if exe == "" {
 		exitOn(errors.New("no Chrome or Chromium found; set PUKINOTES_BROWSER"))
 	}
 	abs, err := filepath.Abs(out)
 	exitOn(err)
+	exitOn(os.MkdirAll(filepath.Dir(abs), 0o755))
 	tmp, err := os.MkdirTemp("", "pukinotes-shot")
 	exitOn(err)
 	defer os.RemoveAll(tmp)
@@ -193,7 +195,7 @@ func cmdScreenshot(args []string) {
 	if st, err := os.Stat(abs); err != nil || st.Size() == 0 {
 		exitOn(errors.New("no screenshot was written"))
 	}
-	o, _ := json.Marshal(map[string]any{"ok": true, "path": abs, "board": board})
+	o, _ := json.Marshal(map[string]any{"ok": true, "path": abs, "board": board, "size": fmt.Sprintf("%dx%d", w*2, h*2)})
 	fmt.Println(string(o))
 }
 

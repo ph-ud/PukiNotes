@@ -43,7 +43,10 @@ const BOARD_SCHEMA = 1; // bump only with a migration in migrateBoard(); new opt
 /* =================== connection to the PukiNotes process =================== */
 const params = new URLSearchParams(location.search);
 // ?b=<board> opens that board, ?fit=1 fits the view to its content, ?snap=1 marks a screenshot taker (pukinotes screenshot)
+// ?seed=0 (the headless window in a cloud sandbox) waits for a board instead of making a welcome board
 const openBoard = params.get('b'), fitOnOpen = params.get('fit') === '1', snap = params.get('snap') === '1';
+const noSeed = snap || params.get('seed') === '0';
+let waitingForBoard = false;
 let token = params.get('t');
 if (token){ try { sessionStorage.setItem('pukinotes-token', token); } catch(e){} history.replaceState(null, '', location.pathname); }
 else { try { token = sessionStorage.getItem('pukinotes-token'); } catch(e){} }
@@ -79,7 +82,9 @@ function onMsg(m){
       if (!ready){ ready = true; start(); }
       break;
     }
-    case 'boards': boardsMeta = m.data || []; for (const b of boardsMeta) ensureBoard(b.id); for (const id of [...boards.keys()]) if (!boardsMeta.some(x => x.id === id)) boards.delete(id); renderBoards(); break;
+    case 'boards': boardsMeta = m.data || []; for (const b of boardsMeta) ensureBoard(b.id); for (const id of [...boards.keys()]) if (!boardsMeta.some(x => x.id === id)) boards.delete(id);
+      if (waitingForBoard && boardsMeta.length){ waitingForBoard = false; start(); } else renderBoards();
+      break;
     case 'aw': { const b = boards.get(m.b); if (b) awp.applyAwarenessUpdate(b.aw, b64dec(m.d), REMOTE); break; }
     case 'peers': peers = m.data || []; renderPeople(); renderPeerList(); break;
     case 'net': netInfo = m.data || {}; renderNet(); break;
@@ -172,7 +177,7 @@ function switchBoard(id){
 function start(){
   let id = openBoard && boards.has(openBoard) ? openBoard : ls.get('pukinotes-current');
   if (!id || !boards.has(id)) id = boardsMeta.length ? boardsMeta[0].id : null;
-  if (!id && snap) return;
+  if (!id && noSeed){ waitingForBoard = true; return; }
   if (!id){
     const b = createBoard('Our first board');
     seedWelcome(b);
