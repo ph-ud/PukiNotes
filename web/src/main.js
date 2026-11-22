@@ -498,12 +498,45 @@ function renderItem(it){
     el.insertAdjacentHTML('beforeend', `<span class="who" style="background:${who.color}" title="${esc(who.name)}">${esc(who.initial)}</span>`);
   } else if (it.type === 'image'){
     const img = document.createElement('img'); img.src = it.src; img.draggable = false; el.appendChild(img);
+    const url = safeLink(it.link);
+    if (url){
+      // the link lives in the polaroid's bottom strip, like a caption written on it
+      el.classList.add('linked');
+      el.insertAdjacentHTML('beforeend', `<a class="cap" href="${esc(url)}" title="Open ${esc(url)}">${LINK_SVG}<span>${esc(linkLabel(url))}</span><i>↗</i></a>`);
+    }
   } else if (it.type === 'table'){
     renderTable(it, el);
   }
   el.insertAdjacentHTML('beforeend', '<span class="handle"></span>');
   if (it.id === selected) el.classList.add('selected');
   return el;
+}
+
+/* ---------- links on photos ---------- */
+const LINK_SVG = '<svg viewBox="0 0 24 24"><path d="M10 14a4.5 4.5 0 0 0 6.4 0l3.2-3.2a4.5 4.5 0 0 0-6.4-6.4l-1.1 1.1"/><path d="M14 10a4.5 4.5 0 0 0-6.4 0l-3.2 3.2a4.5 4.5 0 0 0 6.4 6.4l1.1-1.1"/></svg>';
+// Only real web pages: a bare "shop.com/x" gets https://, anything else (javascript:, file:…) is refused.
+function safeLink(raw){
+  let s = String(raw || '').trim(); if (!s) return '';
+  if (!/^[a-z][a-z0-9+.-]*:/i.test(s)) s = 'https://' + s.replace(/^\/+/, '');
+  try {
+    const u = new URL(s);
+    if ((u.protocol !== 'http:' && u.protocol !== 'https:') || !u.hostname.includes('.') && u.hostname !== 'localhost') return '';
+    return u.href;
+  } catch { return ''; }
+}
+const linkLabel = url => { try { const u = new URL(url); return u.hostname.replace(/^www\./, ''); } catch { return url; } };
+function openLink(url){
+  url = safeLink(url); if (!url) return;
+  const w = window.open(url, '_blank', 'noopener,noreferrer');
+  if (w === null) toast('Your browser blocked the link');
+}
+function setPhotoLink(id, raw){
+  const it = find(id); if (!it || it.type !== 'image') return false;
+  const url = raw ? safeLink(raw) : '';
+  if (raw && !url){ toast('That doesn’t look like a web link'); return false; }
+  if ((it.link || '') === url) return true;
+  A.set(id, {link: url}); logH(url ? (it.link ? 'Changed a photo’s link' : 'Linked a photo') : 'Removed a photo’s link');
+  return true;
 }
 
 function renderComment(it){
@@ -719,6 +752,7 @@ vp.addEventListener('pointerdown', e => {
   const rz = e.button === 0 && e.target.closest('.cres, .rres, .tres');
   if (rz && (tool === 'select' || tool === 'hand')) return startTableResize(e, rz);
   if (e.target.closest('.card') || e.target.closest('.txt[contenteditable=true]')) return;
+  if (e.button === 0 && e.target.closest('.cap') && tool === 'select'){ e.preventDefault(); return; }
   if (tool === 'select' && e.target.closest('.table input, .table button')){ const h = e.target.closest('[data-id]'); if (selected !== h.dataset.id) select(h.dataset.id); return; }
   if (document.activeElement && document.activeElement !== document.body) document.activeElement.blur();
   const host = e.target.closest('[data-id]'); const id = host && host.dataset.id;
@@ -728,6 +762,7 @@ vp.addEventListener('pointerdown', e => {
   if (openComment && openComment !== id) closeComments();
   switch (tool){
     case 'select':
+      if (id && (e.metaKey || e.ctrlKey) && find(id)?.link){ e.preventDefault(); openLink(find(id).link); return; }
       if (id){ select(id); if (e.target.classList.contains('handle')) return startResize(e, id); return startDrag(e, id); }
       select(null); return startPan(e);
     case 'pen': return startStroke(e, p);
@@ -741,7 +776,14 @@ vp.addEventListener('pointerdown', e => {
     case 'eraser': return startErase(e);
   }
 });
+vp.addEventListener('click', e => {
+  const cap = e.target.closest('.cap'); if (!cap) return;
+  e.preventDefault();
+  if (tool === 'select') openLink(find(cap.closest('[data-id]').dataset.id)?.link);
+});
 vp.addEventListener('dblclick', e => {
+  const photo = e.target.closest('.item.image.linked');
+  if (photo && tool === 'select'){ openLink(find(photo.dataset.id)?.link); return; }
   const host = e.target.closest('.item.sticky');
   if (host) editSticky(host.dataset.id);
   else if (!e.target.closest('[data-id]') && tool === 'select'){ e.preventDefault(); const p = toWorld(e.clientX, e.clientY); addSticky(p.x - 105, p.y - 40); }
@@ -901,7 +943,7 @@ async function addImageFile(file, at){
     const {src, w: iw, h: ih} = await downscale(file);
     const w = Math.min(360, iw), c = at || toWorld(lastPointer.x, lastPointer.y);
     const id = A.add({type:'image', x: c.x - w/2, y: c.y - (w*ih/iw)/2, w, src});
-    logH('Added a photo'); selected = id; renderNow();
+    logH('Added a photo'); selected = id; renderNow(); updateStylebar();
   } catch(e){ toast('Couldn’t read that image'); }
 }
 $('#filePick').addEventListener('change', e => { [...e.target.files].forEach((f, i) => addImageFile(f, pickAt && {x: pickAt.x + i*30, y: pickAt.y + i*30})); e.target.value = ''; });
@@ -912,6 +954,10 @@ addEventListener('paste', e => {
   const img = items.find(i => i.type.startsWith('image/'));
   if (img){ e.preventDefault(); addImageFile(img.getAsFile()); return; }
   const text = e.clipboardData?.getData('text/plain');
+  const sel = selected && find(selected);
+  if (text && sel?.type === 'image' && /^\s*(https?:\/\/|www\.)\S+\s*$/i.test(text)){
+    e.preventDefault(); if (setPhotoLink(sel.id, text)){ toast('Link added to the photo'); updateStylebar(); } return;
+  }
   if (text){ e.preventDefault(); const c = toWorld(lastPointer.x, lastPointer.y); addSticky(c.x - 105, c.y - 40, text.slice(0, 2000)); }
 });
 addEventListener('dragover', e => e.preventDefault());
@@ -944,8 +990,24 @@ function updateStylebar(){
   } else if (tool === 'sticky' || sel?.type === 'sticky'){
     const c0 = sel?.type === 'sticky' ? sel.color : stickyColor;
     html = STICKIES.map(c => `<button class="sw ${c === c0 ? 'on' : ''}" data-sticky="${c}" style="background:${c};width:28px;height:28px;border-radius:8px"></button>`).join('');
+  } else if (sel?.type === 'image'){
+    const url = safeLink(sel.link);
+    html = `<label class="linkf ${url ? 'has' : ''}">${LINK_SVG}<input id="linkIn" type="url" spellcheck="false" autocomplete="off" placeholder="Paste a link to a web page…" value="${esc(url)}"></label>`
+      + (url ? `<button class="lbtn" data-act="open" title="Open the page">Open ↗</button><button class="lbtn x" data-act="unlink" title="Remove the link">✕</button>` : '');
   }
+  if (bar.contains(document.activeElement) && bar.dataset.for === (sel?.id || '')) return; // don't yank the link someone is typing
+  bar.dataset.for = sel?.id || '';
   bar.innerHTML = html; bar.classList.toggle('show', !!html);
+  const inp = bar.querySelector('#linkIn');
+  if (inp){
+    const save = () => { if (inp.dataset.done) return; inp.dataset.done = 1; setPhotoLink(sel.id, inp.value); };
+    inp.addEventListener('keydown', e => {
+      e.stopPropagation();
+      if (e.key === 'Enter'){ e.preventDefault(); delete inp.dataset.done; if (setPhotoLink(sel.id, inp.value)){ inp.dataset.done = 1; inp.blur(); updateStylebar(); } }
+      if (e.key === 'Escape'){ inp.dataset.done = 1; inp.blur(); updateStylebar(); }
+    });
+    inp.addEventListener('blur', save);
+  }
 }
 $('#stylebar').addEventListener('click', e => {
   const b = e.target.closest('button'); if (!b) return;
@@ -953,6 +1015,8 @@ $('#stylebar').addEventListener('click', e => {
   if (b.dataset.ink){ inkColor = b.dataset.ink; if (sel?.type === 'stroke'){ A.set(sel.id, {color: inkColor}); logH('Recolored a drawing'); } }
   if (b.dataset.w){ inkWidth = +b.dataset.w; if (sel?.type === 'stroke'){ A.set(sel.id, {width: inkWidth}); logH('Changed a drawing'); } }
   if (b.dataset.sticky){ stickyColor = b.dataset.sticky; if (sel?.type === 'sticky'){ A.set(sel.id, {color: stickyColor}); logH('Recolored a sticky note'); } }
+  if (b.dataset.act === 'open' && sel) openLink(sel.link);
+  if (b.dataset.act === 'unlink' && sel){ setPhotoLink(sel.id, ''); }
   if (b.id === 'assistBtn'){ assist = !assist; toast(assist ? 'Steady hand on: smoothing + shape snapping' : 'Steady hand off: raw strokes'); }
   updateStylebar();
 });
@@ -1545,7 +1609,7 @@ function publicItem(it){
     o.rows = it.rows.map((r, ri) => it.cols.map((c, ci) => { const raw = cellRaw(it, ri, ci), v = cellVal(it, ri, ci); return String(raw).startsWith('=') ? {formula: raw, value: v} : v; }));
     o.totals = it.cols.map((c, ci) => { const vals = it.rows.map((_, r) => cellVal(it, r, ci)).filter(v => v !== ''); return vals.length && vals.every(v => typeof v === 'number') ? vals.reduce((a, b) => a + b, 0) : null; });
   }
-  if (it.type === 'image') o.note = 'photo (pixels not included; use your own judgment or ask your human)';
+  if (it.type === 'image'){ o.note = 'photo (pixels not included; use your own judgment or ask your human)'; if (safeLink(it.link)) o.link = safeLink(it.link); }
   o.v = verOf(it);
   return o;
 }
@@ -1569,7 +1633,9 @@ const TOOLS = {
     const {src, w: iw, h: ih} = a._img; // prepared (decoded and shrunk) in onRpc, before the change set opens
     const w = Math.max(40, Math.min(1200, num(a.w, 300))), h = w*ih/iw;
     const p = a.x == null || a.y == null ? freeSpot() : {x: num(a.x, 0), y: num(a.y, 0)};
-    const id = A.add({type:'image', x: p.x, y: p.y, w, src});
+    const link = a.link ? safeLink(a.link) : '';
+    if (a.link && !link) throw new Error('link must be a web page address (http or https)');
+    const id = A.add({type:'image', x: p.x, y: p.y, w, src, link: link || undefined});
     return {ok: true, id, w: Math.round(w), h: Math.round(h)};
   },
   pukinotes_add_comment(a){
@@ -1594,6 +1660,11 @@ const TOOLS = {
     if (a.w != null && it.type !== 'table') f.w = num(a.w, it.w);
     if (a.color) f.color = a.color;
     if (a.title != null && it.type === 'table') f.title = String(a.title);
+    if (a.link != null){
+      if (it.type !== 'image') throw new Error('only photos have a link');
+      f.link = a.link ? safeLink(a.link) : '';
+      if (a.link && !f.link) throw new Error('link must be a web page address (http or https)');
+    }
     if (it.type === 'stroke' && (f.x != null || f.y != null)){ const b = bbox(it); A.move([it.id], (f.x ?? b.x) - b.x, (f.y ?? b.y) - b.y); delete f.x; delete f.y; }
     A.set(it.id, f); return {ok: true};
   },
