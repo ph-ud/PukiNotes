@@ -948,9 +948,11 @@ async function addImageFile(file, at){
   } catch(e){ toast('Couldn’t read that image'); }
 }
 $('#filePick').addEventListener('change', e => { [...e.target.files].forEach((f, i) => addImageFile(f, pickAt && {x: pickAt.x + i*30, y: pickAt.y + i*30})); e.target.value = ''; });
+// Somewhere the person types (chat box, link field, table cell, a note being edited): keys and paste belong to it.
+const isTyping = t => !!(t && t.closest && (t.closest('[contenteditable=true], input, textarea, select')));
 addEventListener('paste', e => {
   if (!cur) return;
-  if (e.target.closest && (e.target.closest('[contenteditable=true]') || e.target.tagName === 'INPUT')) return;
+  if (isTyping(e.target)) return;
   const items = [...(e.clipboardData?.items || [])];
   const img = items.find(i => i.type.startsWith('image/'));
   if (img){ e.preventDefault(); addImageFile(img.getAsFile()); return; }
@@ -1024,7 +1026,7 @@ $('#stylebar').addEventListener('click', e => {
 const KEYS = {v:'select', h:'hand', p:'pen', l:'line', n:'sticky', c:'comment', e:'eraser', t:'table'};
 addEventListener('keydown', e => {
   if (!cur) return;
-  if (e.target.closest && (e.target.closest('[contenteditable=true]') || e.target.tagName === 'INPUT')) return;
+  if (isTyping(e.target)) return;
   const mod = e.metaKey || e.ctrlKey;
   if (mod && e.key.toLowerCase() === 'z'){ e.preventDefault(); e.shiftKey ? cur.undo.redo() : cur.undo.undo(); return; }
   if (mod && e.key.toLowerCase() === 'y'){ e.preventDefault(); cur.undo.redo(); return; }
