@@ -65,6 +65,14 @@ svg#ink{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;poi
 /* image (polaroid) */
 .image{background:#fff;padding:8px 8px 26px;border-radius:6px;box-shadow:var(--shadow-sm)}
 .image img{display:block;width:100%;height:auto;border-radius:3px;pointer-events:none}
+.image .cap{position:absolute;left:8px;right:8px;bottom:0;height:26px;display:flex;align-items:center;justify-content:center;gap:5px;
+  font-size:12px;font-weight:700;color:var(--muted);text-decoration:none;cursor:pointer;-webkit-user-drag:none}
+.image .cap svg{flex:none;width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round}
+.image .cap span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.image .cap i{font-style:normal;opacity:0;transform:translate(-3px,2px);transition:.15s var(--ease)}
+.image .cap:hover{color:var(--accent-2)}
+.image .cap:hover i{opacity:1;transform:none}
+#viewport:not(.t-select) .image .cap{pointer-events:none}
 
 .item.selected{outline:2px solid var(--accent);outline-offset:4px}
 .handle{position:absolute;right:-9px;bottom:-9px;width:16px;height:16px;border-radius:50%;background:#fff;border:2px solid var(--accent);cursor:nwse-resize;display:none;box-shadow:var(--shadow-sm)}
@@ -135,6 +143,16 @@ svg#ink{position:absolute;left:0;top:0;width:1px;height:1px;overflow:visible;poi
 .wd span{background:var(--ink);border-radius:9px;width:16px}
 .assist{font-size:12px;font-weight:700;color:var(--muted);display:flex;gap:6px;align-items:center;padding:4px 8px;border-radius:9px}
 .assist.on{color:var(--sage);background:var(--sage-soft)}
+.linkf{display:flex;align-items:center;gap:7px;padding:0 4px 0 6px;color:var(--faint)}
+.linkf svg{flex:none;width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round}
+.linkf.has,.linkf:focus-within{color:var(--accent-2)}
+.linkf input{width:270px;border:1.5px solid var(--line);background:#fff;border-radius:10px;padding:7px 10px;font:inherit;font-size:13.5px;outline:none;color:var(--ink)}
+.linkf input:focus{border-color:var(--accent)}
+.linkf input::placeholder{color:var(--faint)}
+.lbtn{font-size:13px;font-weight:800;color:var(--accent-2);padding:7px 10px;border-radius:10px;white-space:nowrap}
+.lbtn:hover{background:var(--accent-soft)}
+.lbtn.x{color:var(--muted);font-weight:700;padding:7px 9px}
+.lbtn.x:hover{background:#f3e8da;color:var(--ink)}
 
 #zoom{right:16px;bottom:18px;display:flex;align-items:center;padding:5px;gap:2px}
 .iconbtn{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-weight:800;color:#6b5a4e}
