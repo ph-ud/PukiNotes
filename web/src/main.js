@@ -84,14 +84,14 @@ function onMsg(m){
     case 'net': netInfo = m.data || {}; renderNet(); break;
     case 'agent': agentInfo = m.data || {}; renderBind(); renderChatsSoon(); renderAgentBtn(); break;
     case 'invite':
-      if (m.error){ $('#joinErr').textContent = m.error; break; }
+      if (m.error){ $('#shareErr').textContent = m.error; break; }
       if (m.b !== cur?.id) break;
       $('#inviteCode').textContent = m.code; $('#codeBox').hidden = false;
       break;
     case 'joined':
       $('#joinBtn').disabled = false; $('#joinBtn').textContent = 'Join';
       if (m.error){ $('#joinErr').textContent = m.error; break; }
-      $('#joinInput').value = ''; $('#joinErr').textContent = ''; closeShare();
+      $('#joinInput').value = ''; $('#joinErr').textContent = ''; closeNew();
       setTimeout(() => {
         // The starter board nobody touched is just clutter now: tuck it away.
         for (const x of [...boards.values()]){
@@ -126,7 +126,7 @@ function ensureBoard(id){
   b.meta.observe(() => { if (b === cur) $('#boardName').textContent = boardName(b); renderBoards(); });
   b.hist.observe(() => { if (b === cur){ renderHistory(); renderChatsSoon(); } });
   // Chats are new in v0.3 and optional, so older copies simply don't see them.
-  b.chats.observeDeep(() => { if (ready) routeChats(b); if (b === cur) renderChatsSoon(); renderAgentBtn(); });
+  b.chats.observeDeep(() => { if (ready) routeChats(b); if (b === cur){ renderChatsSoon(); renderHistory(); } renderAgentBtn(); });
   b.aw.setLocalState(null);
   b.aw.on('update', ({added, updated, removed}, origin) => {
     if (origin !== REMOTE){
@@ -168,7 +168,7 @@ function switchBoard(id){
   $('#boardName').textContent = boardName(cur);
   $('#drawer').classList.remove('show');
   applyView(); renderNow(); renderBoards(); renderHistory(); renderPresence(); updateStylebar();
-  openChat = null; renderChats(); renderAgentBtn();
+  openChat = null; pastView = false; renderChats(); renderAgentBtn();
 }
 
 function start(){
@@ -436,8 +436,9 @@ function person(id){
   return peers.find(p => p.id === id) || {id, name:'Someone', color:'#a08f80'};
 }
 const initial = n => (n || '?').trim().charAt(0).toUpperCase();
+const SPARK = '<svg viewBox="0 0 24 24" class="spk-i"><path d="M12 2.5C12.7 8.6 15.4 11.3 21.5 12 15.4 12.7 12.7 15.4 12 21.5 11.3 15.4 8.6 12.7 2.5 12 8.6 11.3 11.3 8.6 12 2.5Z"/></svg>';
 function authorBadge(it){
-  if (it.agent) return {color: AGENT_COLOR, initial:'✦', name: `${it.agent} for ${person(it.author).name}`};
+  if (it.agent) return {color: AGENT_COLOR, initial:'', agent:true, name: `${it.agent} for ${person(it.author).name}`};
   const p = person(it.author); return {color:p.color, initial:initial(p.name), name:p.name};
 }
 
@@ -495,7 +496,7 @@ function renderItem(it){
     el.style.background = it.color; el.style.setProperty('--rot', (it.rot || 0) + 'deg');
     const t = document.createElement('div'); t.className = 'txt'; t.textContent = it.text; el.appendChild(t);
     const who = authorBadge(it);
-    el.insertAdjacentHTML('beforeend', `<span class="who" style="background:${who.color}" title="${esc(who.name)}">${esc(who.initial)}</span>`);
+    el.insertAdjacentHTML('beforeend', `<span class="who" style="background:${who.color}" title="${esc(who.name)}">${who.agent ? SPARK : esc(who.initial)}</span>`);
   } else if (it.type === 'image'){
     const img = document.createElement('img'); img.src = it.src; img.draggable = false; el.appendChild(img);
   } else if (it.type === 'table'){
@@ -511,14 +512,14 @@ function renderComment(it){
   w.style.left = it.x + 'px'; w.style.top = it.y + 'px';
   if (it.id === selected) w.classList.add('selected');
   const first = it.messages[0];
-  const fp = first ? (first.agent ? {color:AGENT_COLOR, name:'✦'} : person(first.by)) : me;
-  w.innerHTML = `<button class="pin" style="background:${fp.color}">${esc(first && first.agent ? '✦' : initial(fp.name))}${it.messages.length > 1 ? `<span class="count">${it.messages.length}</span>` : ''}</button>`;
+  const fp = first ? (first.agent ? {color:AGENT_COLOR, name:''} : person(first.by)) : me;
+  w.innerHTML = `<button class="pin" style="background:${fp.color}">${first && first.agent ? SPARK : esc(initial(fp.name))}${it.messages.length > 1 ? `<span class="count">${it.messages.length}</span>` : ''}</button>`;
   if (it.id === openComment){
     const c = document.createElement('div'); c.className = 'card';
     c.innerHTML = it.messages.map(m => {
       const p = m.agent ? {color:AGENT_COLOR, name:m.agent} : person(m.by);
       const note = m.agent ? `<div class="agentnote">for ${esc(person(m.by).name)}</div>` : '';
-      return `<div class="msg"><span class="av" style="background:${p.color}">${m.agent ? '✦' : esc(initial(p.name))}</span><div><b>${esc(p.name)}</b><span class="t">${timeStr(m.at || Date.now())}</span>${note}<div>${esc(m.text)}</div></div></div>`;
+      return `<div class="msg"><span class="av" style="background:${p.color}">${m.agent ? SPARK : esc(initial(p.name))}</span><div><b>${esc(p.name)}</b><span class="t">${timeStr(m.at || Date.now())}</span>${note}<div>${esc(m.text)}</div></div></div>`;
     }).join('') + `<input placeholder="${it.messages.length ? 'Reply… (@ai asks your agent)' : 'Leave a note… (@ai asks your agent)'}">`;
     const inp = c.querySelector('input');
     inp.addEventListener('keydown', e => {
@@ -940,7 +941,7 @@ function updateStylebar(){
     html = INKS.map(c => `<button class="sw ${c === c0 ? 'on' : ''}" data-ink="${c}" style="background:${c}"></button>`).join('')
       + '<span class="sep" style="margin:0 4px"></span>'
       + WIDTHS.map(w => `<button class="wd ${w === w0 ? 'on' : ''}" data-w="${w}"><span style="height:${w}px"></span></button>`).join('');
-    if (tool === 'pen') html += `<span class="sep" style="margin:0 4px"></span><button class="assist ${assist ? 'on' : ''}" id="assistBtn">✨ Steady hand ${assist ? 'on' : 'off'}</button>`;
+    if (tool === 'pen') html += `<span class="sep" style="margin:0 4px"></span><button class="assist ${assist ? 'on' : ''}" id="assistBtn"> Steady hand ${assist ? 'on' : 'off'}</button>`;
   } else if (tool === 'sticky' || sel?.type === 'sticky'){
     const c0 = sel?.type === 'sticky' ? sel.color : stickyColor;
     html = STICKIES.map(c => `<button class="sw ${c === c0 ? 'on' : ''}" data-sticky="${c}" style="background:${c};width:28px;height:28px;border-radius:8px"></button>`).join('');
@@ -1042,7 +1043,7 @@ function renderNet(){
   $('#gearBtn').title = netInfo.ready ? 'Settings' : 'Settings · not connected to the relay yet';
 }
 function renderPeerList(){
-  $('#peerList').innerHTML = peers.length ? peers.map(p => `<div class="peerrow"><span class="face ${p.online ? 'online' : 'offline'}" style="background:${esc(p.color)};margin:0">${esc(initial(p.name))}</span><div><b>${esc(p.name)}</b><br><small>${p.online ? `● ${p.latency_ms ?? '…'} ms` : '○ away'} · ${p.boards?.length || 0} 🗂${p.version && appVersion && p.version !== appVersion ? ` · on v${esc(p.version)} (you have v${esc(appVersion)})` : ''}</small></div></div>`).join('')
+  $('#peerList').innerHTML = peers.length ? peers.map(p => `<div class="peerrow"><span class="face ${p.online ? 'online' : 'offline'}" style="background:${esc(p.color)};margin:0">${esc(initial(p.name))}</span><div><b>${esc(p.name)}</b><br><small>${p.online ? `here · ${p.latency_ms ?? '…'} ms` : 'away'} · ${p.boards?.length || 0} board${p.boards?.length === 1 ? '' : 's'}${p.version && appVersion && p.version !== appVersion ? ` · on v${esc(p.version)} (you have v${esc(appVersion)})` : ''}</small></div></div>`).join('')
     : '';
 }
 function renderBoards(){
@@ -1057,7 +1058,21 @@ function renderBoards(){
 }
 $('#brandBtn').onclick = () => $('#drawer').classList.toggle('show');
 $('#boardList').addEventListener('click', e => { const b = e.target.closest('[data-b]'); if (b) switchBoard(b.dataset.b); });
-$('#newBoard').onclick = () => { const b = createBoard('Untitled board'); switchBoard(b.id); setTimeout(renameBoard, 60); };
+// New board: start an empty one, or join a partner's with their code.
+function openNew(){
+  $('#drawer').classList.remove('show');
+  $('#newScrim').classList.add('show'); $('#joinErr').textContent = ''; $('#newName').value = '';
+  setTimeout(() => $('#newName').focus(), 60);
+}
+function closeNew(){ $('#newScrim').classList.remove('show'); }
+$('#newBoard').onclick = openNew;
+$('#closeNew').onclick = closeNew;
+$('#newScrim').addEventListener('pointerdown', e => { if (e.target.id === 'newScrim') closeNew(); });
+$('#newCreate').onclick = () => {
+  const name = $('#newName').value.trim() || 'Untitled board';
+  const b = createBoard(name); closeNew(); switchBoard(b.id);
+};
+$('#newName').addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') $('#newCreate').click(); if (e.key === 'Escape') closeNew(); });
 function renameBoard(){
   const el = $('#boardName'); el.contentEditable = 'true'; el.focus();
   const r = document.createRange(); r.selectNodeContents(el); getSelection().removeAllRanges(); getSelection().addRange(r);
@@ -1074,7 +1089,7 @@ document.addEventListener('pointerdown', e => { if (!e.target.closest('#drawer')
 
 /* ---------- share ---------- */
 function openShare(){
-  $('#scrim').classList.add('show'); $('#joinErr').textContent = ''; $('#shareTitle').textContent = boardName(cur);
+  $('#scrim').classList.add('show'); $('#shareErr').textContent = ''; $('#shareTitle').textContent = boardName(cur);
   $('#codeBox').hidden = true; send({t:'invite', b: cur.id}); // the board's code, same every time
   renderNet(); renderPeerList();
 }
@@ -1095,7 +1110,7 @@ $('#joinBtn').onclick = () => {
   $('#joinBtn').disabled = true; $('#joinBtn').textContent = 'Connecting…'; $('#joinErr').textContent = '';
   send({t:'join', code});
 };
-$('#joinInput').addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') $('#joinBtn').click(); });
+$('#joinInput').addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') $('#joinBtn').click(); if (e.key === 'Escape') closeNew(); });
 const saveName = () => { const n = $('#nameInput').value.trim(); if (n && n !== me.name) send({t:'profile', data:{name: n, color: me.color}}); };
 $('#nameInput').addEventListener('keydown', e => { e.stopPropagation(); if (e.key === 'Enter') $('#nameInput').blur(); });
 $('#nameInput').addEventListener('blur', saveName);
@@ -1122,13 +1137,13 @@ function renderBind(){
   const a = agentInfo || {};
   const card = $('#bindCard');
   if (a.bound){
-    card.className = 'bind';
-    card.innerHTML = `<i></i><div><b>${esc(a.name)}</b>${a.pending ? `<small>${a.pending} waiting</small>` : ''}</div>`;
+    card.className = 'bind' + (a.listening ? '' : ' wait');
+    card.innerHTML = `<i></i><span><b>${esc(a.name)}</b> · ${a.listening ? 'listening' : 'not listening right now'}${a.pending ? ` · ${a.pending} waiting` : ''}</span>`;
     card.title = a.listening ? 'Listening for your requests' : 'Bound, but not listening right now';
   } else {
     card.className = 'bind off';
-    card.innerHTML = `<i></i><div><b>No agent yet</b><small>Tell yours: “launch PukiNotes”</small></div>`;
-    card.title = 'Requests wait here until an agent binds (see AGENTS.md)';
+    card.innerHTML = `<i></i><span>No agent yet. Tell yours “launch PukiNotes”</span>`;
+    card.title = 'Messages wait here until an agent binds (see AGENTS.md)';
   }
   $('#agentDot').style.background = a.bound && a.listening ? '#5fb36b' : a.bound ? '#e0b44c' : '#c9b9a6';
   $('#claudeBtn').title = a.bound ? `${a.name} is bound` : 'No agent bound yet';
@@ -1175,10 +1190,14 @@ function toggleAgent(force){
   if (show){ renderChats(); renderHistory(); setTimeout(() => $('#askInput').focus(), 50); }
 }
 $('#claudeBtn').onclick = () => toggleAgent();
-$('#claudeX').onclick = () => toggleAgent(false);
-$('#askForm').addEventListener('submit', e => { e.preventDefault(); const t = $('#askInput').value.trim(); if (t){ $('#askInput').value = ''; sendToChat(t); } });
-$('#askInput').addEventListener('keydown', e => e.stopPropagation());
-document.querySelectorAll('.chips button').forEach(b => b.onclick = () => sendToChat(b.dataset.ask || b.textContent));
+function fitAsk(){ const i = $('#askInput'); i.style.height = 'auto'; i.style.height = Math.min(i.scrollHeight, 140) + 'px'; $('#askSend').disabled = !i.value.trim(); }
+$('#askForm').addEventListener('submit', e => { e.preventDefault(); const t = $('#askInput').value.trim(); if (t){ $('#askInput').value = ''; fitAsk(); sendToChat(t); } });
+$('#askInput').addEventListener('keydown', e => {
+  e.stopPropagation();
+  if (e.key === 'Enter' && !e.shiftKey && !e.isComposing){ e.preventDefault(); $('#askForm').requestSubmit(); }
+});
+$('#askInput').addEventListener('input', fitAsk);
+fitAsk();
 
 /* =================== chats: several agents, one board =================== */
 // A chat lives in the board's Yjs doc, so both people see it. It belongs to the
@@ -1186,6 +1205,8 @@ document.querySelectorAll('.chips button').forEach(b => b.onclick = () => sendTo
 // its agent. Anyone can add messages; they queue for that agent.
 //   chats: Y.Map<chatId, Y.Map{id, owner, agent, title, at, closed, msgs: Y.Array, st: Y.Map<msgId, queued|working|done>, touched: Y.Map<itemId, ms>}>
 let openChat = null;           // chat id shown in the panel, or null for a new chat
+let pastView = false;          // openChat is a finished chat, opened from History
+let histMode = 'chats';        // History shows finished chats, or every change
 const TOUCH_FRESH = 12000;     // ms an item glows after an agent touched it
 const ICON = {
   sticky: '<svg viewBox="0 0 24 24"><path d="M4 5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v9l-6 6H5a1 1 0 0 1-1-1z"/></svg>',
@@ -1200,6 +1221,9 @@ const ICON = {
   plus: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
   clock: '<svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg>',
   gone: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7" stroke-dasharray="3 3"/></svg>',
+  x: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  spark: SPARK,
+  back: '<svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>',
   wait: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
 };
 
@@ -1242,13 +1266,22 @@ function newChat(){
 function sendToChat(text){
   if (!cur) return;
   let c = openChat && cur.chats.get(openChat);
-  if (!c || c.get('closed')){ c = newChat(); openChat = c.get('id'); }
+  // Writing in a finished chat opened from History picks it up again.
+  if (c && c.get('closed') && pastView) reopenChat(c);
+  else if (!c || c.get('closed')){ c = newChat(); openChat = c.get('id'); }
+  pastView = false;
   cur.doc.transact(() => {
     if (!c.get('title')) c.set('title', firstSentence(text));
     c.get('msgs').push([{id: 'm' + uid(), kind: 'h', by: me.id, text, at: Date.now()}]);
   }, 'chat');
   renderChats();
 }
+function reopenChat(c){
+  cur.doc.transact(() => { c.set('closed', false); c.delete('closedAt'); c.set('at', Date.now()); }, 'chat');
+}
+// Finished chats, newest first.
+const pastChatsOf = (b = cur) => { const out = []; b?.chats.forEach(c => { if (c.get('closed')) out.push(c); }); return out.sort((x, y) => lastAt(y) - lastAt(x)); };
+function lastAt(c){ const m = c.get('msgs').toArray(); return c.get('closedAt') || (m.length ? m[m.length - 1].at : c.get('at')) || 0; }
 // Our own chats: hand every new human message to our agent, once.
 // With resend, also re-send queued/working ones (after a restart the agent dedups by id).
 function routeChats(b, resend){
@@ -1379,12 +1412,15 @@ function flyTo(id){
 }
 
 /* ---------- the panel ---------- */
+// Views: a new chat, an open chat, History (finished chats, or every change),
+// and a finished chat opened from History (pastView).
 let chatsQueued = false;
 function renderChatsSoon(){ if (!chatsQueued){ chatsQueued = true; requestAnimationFrame(() => { chatsQueued = false; renderChats(); }); } }
 const readKey = id => 'pukinotes-read-' + id;
 function unread(c){ const msgs = c.get('msgs').toArray(); const n = ls.get(readKey(c.get('id'))) || 0; return msgs.slice(n).some(m => m.by !== me.id || m.kind === 'a'); }
 function face(pid, cls = ''){ const p = person(pid); return `<span class="cf ${cls}" style="background:${esc(p.color)}">${esc(initial(p.name))}</span>`; }
 const STATE_TIP = {working: 'working', waiting: 'up next', paused: 'paused', away: 'away', idle: 'ready'};
+const DOTS = '<span class="dots"><span></span><span></span><span></span></span>';
 
 function renderAgentBtn(){
   const btn = $('#claudeBtn'); if (!btn || !cur) return;
@@ -1395,41 +1431,76 @@ function renderAgentBtn(){
   badge.className = 'cnt' + (busy ? ' busy' : unr ? ' unr' : '');
 }
 
+function chatStatusLine(c){
+  const {state, oa} = chatState(c);
+  const who = `${esc(oa.name)} for ${esc(ownerName(c))}`;
+  if (state === 'working') return `${DOTS}${who} · working`;
+  if (state === 'waiting') return `${ICON.wait}${who} · up next`;
+  if (state === 'paused' || state === 'away') return `${ICON.pause}${esc(oa.why)}`;
+  return who;
+}
+function renderTop(hist, c){
+  const ib = (id, icon, title, cls = '') => `<button class="ib ${cls}" id="${id}" title="${title}">${icon}</button>`;
+  const newB = ib('newChatBtn', ICON.plus, 'New chat', !hist && !c ? 'on' : '');
+  const histB = ib('histBtn', ICON.clock, 'History', hist || pastView ? 'on' : '');
+  const closeB = ib('claudeX', ICON.x, 'Close');
+  let lead, acts = '';
+  if (hist) lead = `<div class="tt"><h3>History</h3></div>`;
+  else if (c && pastView){
+    lead = `${ib('pastBack', ICON.back, 'Back to History', 'back')}<div class="tt"><h3 title="${esc(c.get('title') || '')}">${esc(c.get('title') || 'Chat')}</h3><small>${esc(ownerAgent(c).name)} for ${esc(ownerName(c))} · ${esc(whenStr(lastAt(c)))}</small></div>`;
+    acts = `<button class="pillbtn" id="chatReopen" title="Pick this chat up again">Reopen</button>`;
+  } else if (c){
+    lead = `<div class="tt"><h3 title="${esc(c.get('title') || '')}">${esc(c.get('title') || 'New chat')}</h3><small>${chatStatusLine(c)}</small></div>`;
+    acts = ib('chatDone', ICON.done, 'Done: finish this chat (it moves to History)', 'ok');
+  } else lead = `<div class="tt"><h3>New chat</h3></div>`;
+  // A finished chat keeps its header calm: back, Reopen, close.
+  $('#chTop').innerHTML = `<div class="ch-lead">${lead}</div>${acts}${c && pastView ? '' : newB + histB}${closeB}`;
+}
+function renderTabs(list, hist){
+  $('#chatRail').innerHTML = list.map(c => {
+    const {state, queued, oa} = chatState(c), p = person(c.get('owner')), id = c.get('id');
+    const on = !hist && !pastView && id === openChat;
+    const tip = `${c.get('title') || 'New chat'}\n${oa.name} for ${ownerName(c)} · ${STATE_TIP[state]}${state === 'paused' || state === 'away' ? ': ' + oa.why : ''}`;
+    const badge = state === 'working' ? DOTS : state === 'paused' || state === 'away' ? ICON.pause : queued ? `<span class="q">${queued}</span>` : unread(c) && !on ? '<span class="un"></span>' : '';
+    return `<button class="ct s-${state} ${on ? 'on' : ''}" data-chat="${esc(id)}" style="--c:${esc(p.color)}" title="${esc(tip)}"><i class="od"></i><span class="nm">${esc(c.get('title') || 'New chat')}</span>${badge}</button>`;
+  }).join('');
+}
 function renderChats(){
   if (!cur) return;
   const list = chatsOf();
-  if (openChat && !list.some(c => c.get('id') === openChat)) openChat = null;
+  if (pastView && !(openChat && cur.chats.get(openChat)?.get('closed'))) pastView = false;
+  if (openChat && !pastView && !list.some(c => c.get('id') === openChat)) openChat = null;
   const hist = !$('#histPane').hidden;
-  // rail: one bubble per open chat, then + and History
-  $('#chatRail').innerHTML = list.map(c => {
-    const {state, queued, oa} = chatState(c), p = person(c.get('owner'));
-    const tip = `${c.get('title') || 'New chat'}\n${oa.name} for ${ownerName(c)} · ${STATE_TIP[state]}${state === 'paused' || state === 'away' ? ': ' + oa.why : ''}`;
-    return `<button class="cb s-${state} ${!hist && c.get('id') === openChat ? 'on' : ''}" data-chat="${esc(c.get('id'))}" style="--c:${esc(p.color)}" title="${esc(tip)}">
-      <span class="cbf">${esc(initial(p.name))}</span><span class="spk">✦</span>
-      ${state === 'paused' || state === 'away' ? `<span class="bd pz">${ICON.pause}</span>` : queued ? `<span class="bd q">${queued}</span>` : unread(c) && c.get('id') !== openChat ? '<span class="bd un"></span>' : ''}</button>`;
-  }).join('') + `<button class="cb new ${!hist && !openChat ? 'on' : ''}" data-chat="" title="New chat">${ICON.plus}</button><span class="rsp"></span>
-    <button class="cb hist ${hist ? 'on' : ''}" id="histBtn" title="History: undo anything">${ICON.clock}</button>`;
+  const c = !hist && openChat ? cur.chats.get(openChat) : null;
+  renderTop(hist, c);
+  renderTabs(list, hist);
   if (hist) return;
-  const c = openChat && cur.chats.get(openChat);
-  $('#askPane').classList.toggle('fresh', !c);
-  const head = $('#chatHead'), box = $('#chat');
+  const box = $('#chat');
   if (!c){
-    head.innerHTML = '';
-    box.innerHTML = `<div class="hello"><span class="spark big">✦</span>${face(me.id, 'mini')}</div>`;
-    $('#askInput').placeholder = agentInfo.bound ? `✦ ${agentInfo.name}` : '✦';
+    box.innerHTML = `<div class="hello"><span class="orb">${ICON.spark}</span><h4>What should we do here?</h4><p>${agentInfo.bound ? `${esc(agentInfo.name)} works right on the board.` : 'Your agent works right on the board.'} Everything it does can be undone in one click.</p></div>`;
+    box.dataset.chat = '';
+    setPlaceholder(agentInfo.bound ? `Ask ${agentInfo.name}…` : 'Ask your agent…');
     return;
   }
-  const {state, oa} = chatState(c);
-  head.innerHTML = `${face(c.get('owner'))}<span class="hn" title="${esc(c.get('title') || '')}"><b>${esc(oa.name)}</b><small>${esc(c.get('title') || '')}</small></span>
-    <span class="stt s-${state}" title="${esc(STATE_TIP[state] + (state === 'paused' || state === 'away' ? ': ' + oa.why : ''))}">${state === 'working' ? '<span class="dots"><span></span><span></span><span></span></span>' : state === 'paused' || state === 'away' ? ICON.pause : state === 'waiting' ? ICON.wait : '<i></i>'}</span>
-    <button class="iconbtn cdone" id="chatDone" title="Done: close this chat">${ICON.done}</button>`;
-  const msgs = c.get('msgs').toArray(), st = c.get('st');
+  const msgs = c.get('msgs').toArray();
+  const {state} = chatState(c);
   const atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 40;
-  box.innerHTML = msgs.map(m => m.kind === 'a' ? agentBub(m, c) : humanBub(m, msgState(c, m), state)).join('') + (state === 'working' ? liveBub(c) : '');
+  box.innerHTML = msgs.map(m => m.kind === 'a' ? agentBub(m, c) : humanBub(m, msgState(c, m), pastView ? 'idle' : state)).join('')
+    + (pastView ? '<div class="ended">Finished</div>' : state === 'working' ? liveBub(c) : '');
   if (atBottom || box.dataset.chat !== openChat) box.scrollTop = 1e6;
   box.dataset.chat = openChat;
-  $('#askInput').placeholder = '';
+  setPlaceholder(pastView ? 'Write to pick this chat up again…' : c.get('owner') === me.id ? 'Reply…' : `Reply (goes to ${ownerAgent(c).name} for ${ownerName(c)})…`);
   if ($('#claude').classList.contains('show')) ls.set(readKey(openChat), msgs.length);
+}
+function setPlaceholder(t){ const i = $('#askInput'); if (i.placeholder !== t) i.placeholder = t; }
+function whenStr(ms){
+  if (!ms) return '';
+  const d = new Date(ms), now = new Date(), day = 864e5;
+  const start = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+  if (ms >= start) return timeStr(ms);
+  if (ms >= start - day) return 'Yesterday';
+  if (ms >= start - 6 * day) return d.toLocaleDateString([], {weekday: 'long'});
+  return d.toLocaleDateString([], {day: 'numeric', month: 'short', ...(d.getFullYear() !== now.getFullYear() ? {year: 'numeric'} : {})});
 }
 function humanBub(m, st, chatSt){
   const mine = m.by === me.id;
@@ -1449,46 +1520,83 @@ function touchedChips(ids, b = cur, cs = {}){
 function agentBub(m, c){
   const ch = m.change ? cur.hist.toArray().find(e => e.id === m.change) : null;
   const ids = ch && ch.cs ? Object.keys(ch.cs) : [];
-  const foot = ids.length ? `<div class="foot">${touchedChips(ids, cur, ch.cs)}<button class="rvt ${ch.reverted ? 'did' : ''}" data-change="${esc(ch.id)}" ${ch.reverted ? 'disabled' : ''} title="${ch.reverted ? 'Undone' : 'Undo all of this'}">${ch.reverted ? ICON.done : ICON.undo}</button></div>` : '';
-  return `<div class="row"><span class="cf mini ag" style="--c:${esc(person(m.by).color)}" title="${esc(m.agent)} for ${esc(ownerName(c))}">✦</span><div class="bub ag ${ch?.reverted ? 'reverted' : ''}" title="${esc(m.agent)} · ${timeStr(m.at)}">${esc(m.text)}${foot}</div></div>`;
+  const foot = ids.length ? `<div class="foot">${touchedChips(ids, cur, ch.cs)}<button class="rvt ${ch.reverted ? 'did' : ''}" data-change="${esc(ch.id)}" ${ch.reverted ? 'disabled' : ''} title="${ch.reverted ? 'Undone' : 'Undo everything from this reply'}">${ch.reverted ? ICON.done + 'Undone' : ICON.undo + 'Undo'}</button></div>` : '';
+  return `<div class="am ${ch?.reverted ? 'reverted' : ''}"><div class="al" title="${esc(m.agent)} for ${esc(ownerName(c))}">${ICON.spark}<b>${esc(m.agent)}</b><time>${timeStr(m.at)}</time></div><div class="at">${esc(m.text)}</div>${foot}</div>`;
 }
 function liveBub(c){
   // what the agent touched so far in this turn, live
   const st = c.get('st'); const working = [...st.entries()].find(([, v]) => v === 'working');
   const ch = working && cur.hist.toArray().find(e => e.req === working[0]);
   const ids = ch && ch.cs ? Object.keys(ch.cs) : [];
-  return `<div class="row"><span class="cf mini ag" style="--c:${esc(person(c.get('owner')).color)}">✦</span><div class="bub ag live"><span class="dots"><span></span><span></span><span></span></span>${ids.length ? `<div class="foot">${touchedChips(ids, cur, ch.cs)}</div>` : ''}</div></div>`;
+  return `<div class="am live"><div class="al">${ICON.spark}<b>${esc(ownerAgent(c).name)}</b>${DOTS}</div>${ids.length ? `<div class="foot">${touchedChips(ids, cur, ch.cs)}</div>` : ''}</div>`;
 }
-$('#chatRail').addEventListener('click', e => {
-  const b = e.target.closest('.cb'); if (!b) return;
-  const showHist = b.id === 'histBtn';
-  $('#histPane').hidden = !showHist; $('#askPane').hidden = showHist;
-  if (!showHist){ openChat = b.dataset.chat || null; setTimeout(() => $('#askInput').focus(), 30); }
+function showPane(hist){ $('#histPane').hidden = !hist; $('#askPane').hidden = hist; }
+function goChat(id){
+  showPane(false); pastView = false; openChat = id || null;
+  renderChats(); renderAgentBtn(); setTimeout(() => $('#askInput').focus(), 30);
+}
+function goHistory(){
+  showPane(true); pastView = false; openChat = null;
   renderChats(); renderHistory(); renderAgentBtn();
-});
+}
+function openPast(id){
+  openChat = id; pastView = true; showPane(false);
+  renderChats(); renderAgentBtn();
+}
+$('#chatRail').addEventListener('click', e => { const b = e.target.closest('.ct'); if (b) goChat(b.dataset.chat); });
 $('#claude').addEventListener('click', e => {
   const t = e.target.closest('.tc'); if (t) { flyTo(t.dataset.item); return; }
   const r = e.target.closest('.rvt');
   if (r && !r.disabled){ try { revertChange(r.dataset.change); toast('Undone'); } catch(err){ toast(err.message); } renderChats(); return; }
-  if (e.target.closest('#chatDone')){ const c = cur.chats.get(openChat); if (c) cur.doc.transact(() => c.set('closed', true), 'chat'); openChat = null; renderChats(); }
+  const id = e.target.closest('button')?.id;
+  if (id === 'claudeX') return toggleAgent(false);
+  if (id === 'newChatBtn') return goChat(null);
+  if (id === 'histBtn') return goHistory();
+  if (id === 'pastBack') return goHistory();
+  if (id === 'chatDone'){ const c = cur.chats.get(openChat); if (c) cur.doc.transact(() => { c.set('closed', true); c.set('closedAt', Date.now()); }, 'chat'); toast('Chat finished. Find it in History.'); return goChat(null); }
+  if (id === 'chatReopen'){ const c = cur.chats.get(openChat); if (c){ reopenChat(c); goChat(c.get('id')); } return; }
+  const pc = e.target.closest('.past'); if (pc){ openPast(pc.dataset.chat); return; }
+  const sg = e.target.closest('#histSeg button'); if (sg){ histMode = sg.dataset.v; renderHistory(); }
 });
 $('#claude').addEventListener('mouseover', e => { const t = e.target.closest('.tc'); if (t) flashItem(t.dataset.item, true); });
 $('#claude').addEventListener('mouseout', e => { const t = e.target.closest('.tc'); if (t) flashItem(t.dataset.item, false); });
 
 function renderHistory(){
   if (!cur || !$('#claude').classList.contains('show') || $('#histPane').hidden) return;
+  $('#histSeg').querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.v === histMode));
+  $('#pastList').hidden = histMode !== 'chats'; $('#histList').hidden = histMode === 'chats';
+  if (histMode === 'chats') return renderPastChats();
   const list = $('#histList'); list.innerHTML = '';
   cur.hist.toArray().slice().reverse().slice(0, 150).forEach(h => {
     const p = person(h.who), li = document.createElement('li');
     const isAgent = !!h.agent;
     li.className = 'h' + (h.reverted ? ' reverted' : '');
-    li.innerHTML = `<span class="av" style="background:${isAgent ? AGENT_COLOR : esc(p.color)}">${isAgent ? '✦' : esc(initial(p.name))}</span><div><div class="what"></div><div class="meta">${esc(isAgent ? `${h.agent} for ${p.name}` : p.name)} · ${timeStr(h.at)}</div></div>`;
+    li.innerHTML = `<span class="av" style="background:${isAgent ? AGENT_COLOR : esc(p.color)}">${isAgent ? ICON.spark : esc(initial(p.name))}</span><div><div class="what"></div><div class="meta">${esc(isAgent ? `${h.agent} for ${p.name}` : p.name)} · ${esc(whenStr(h.at))}</div></div>`;
     li.querySelector('.what').textContent = (h.label || '') + (h.n > 1 ? ` (×${h.n})` : '');
     if (h.prompt){ const q = document.createElement('div'); q.className = 'p'; q.textContent = `“${h.prompt}”`; li.querySelector('div').appendChild(q); }
     if (h.cs) li.insertAdjacentHTML('beforeend', h.reverted ? '<span class="done">Reverted</span>' : '<button class="rv">Revert</button>');
     li.querySelector('.rv')?.addEventListener('click', () => { try { revertChange(h.id); toast('Reverted the agent’s change'); } catch(e){ toast(e.message); } });
     list.appendChild(li);
   });
+  if (!list.children.length) list.innerHTML = '<li class="none"><b>Nothing yet</b>Every change on this board shows up here.</li>';
+}
+// History, the default view: one row per finished chat. Click one to read it.
+function renderPastChats(){
+  const past = pastChatsOf(), list = $('#pastList');
+  if (!past.length){ list.innerHTML = `<li class="none"><b>No finished chats yet</b>When a chat is done, press the check mark at the top. It moves here, and you can open it again any time.</li>`; return; }
+  const hist = cur.hist.toArray();
+  list.innerHTML = past.map(c => {
+    const msgs = c.get('msgs').toArray(), id = c.get('id');
+    const changes = hist.filter(h => h.chat === id && h.cs && Object.keys(h.cs).length);
+    const undone = changes.filter(h => h.reverted).length;
+    const last = [...msgs].reverse().find(m => m.kind === 'a');
+    const bits = [`${msgs.length} message${msgs.length === 1 ? '' : 's'}`];
+    if (changes.length) bits.push(`${changes.length} change${changes.length === 1 ? '' : 's'}${undone ? `, ${undone} undone` : ''}`);
+    return `<li><button class="past" data-chat="${esc(id)}">${face(c.get('owner'))}
+      <span class="pt"><span class="pr"><b>${esc(c.get('title') || 'Chat')}</b><time>${esc(whenStr(lastAt(c)))}</time></span>
+      ${last ? `<span class="pl">${esc(last.text)}</span>` : ''}
+      <span class="pm">${esc(ownerAgent(c).name)} for ${esc(ownerName(c))} · ${bits.join(' · ')}</span></span></button></li>`;
+  }).join('');
 }
 
 /* ---------- agent tools, carried out here ---------- */
