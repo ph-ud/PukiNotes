@@ -135,7 +135,8 @@ Several agents can work on one board at once (yours, and your human's partner's)
   can take the first rows directly; `pukinotes_set_cells` grows the table as needed.
 - **Photos:** for a product, find the image file's own link (it usually ends in .jpg, .png or .webp; open the
   product page and take the `og:image` or the main `<img>` source) and pass it to `pukinotes_add_image`. If a site
-  refuses, download the file yourself and pass `path`.
+  refuses, download the file yourself and pass `path`. Pass the product page as `link` so clicking the photo on the board
+  opens it (`pukinotes_update_item` with `link` adds or changes it later).
 - **Answering an `@ai` comment:** just `pukinotes_reply`. PukiNotes posts your reply in that comment thread.
 - Don't touch sharing, keys or settings. Those tools don't exist for agents, on purpose.
 - Keep replies short. The humans see your changes live on the board anyway.
