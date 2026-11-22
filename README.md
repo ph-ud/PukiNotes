@@ -29,8 +29,14 @@ Point your AI agent at this repo and say:
 
 Your agent reads [`AGENTS.md`](AGENTS.md), sets things up (Go is the only requirement), opens the app and binds
 itself to it. It also puts a **PukiNotes** app in your Applications (or Start menu): next time, just click it.
-PukiNotes opens in its own window, and your agent starts and binds itself. Then ask it things in the ✦ panel, or write `@ai` in any comment on the board. That work runs in
-**your** agent's session, on your plan. Your partner's `@ai` goes to **their** agent.
+PukiNotes opens in its own window, and your agent starts and binds itself. Then start a chat in the ✦ panel, or
+write `@ai` in any comment on the board. That work runs in **your** agent's session, on your plan. Your partner's
+chats and `@ai` go to **their** agent.
+
+Both agents can work on the same board at once. The ✦ panel shows every open chat as a bubble: whose it is, whether
+its agent is working (a spinning ring), has messages waiting, or is paused because that person is away. Each agent
+is briefed on what the others are doing and steers around their items, and every reply shows what it changed,
+with a one-click undo.
 
 <p align="center">
   <img src="assets/screenshot-agent.png" alt="The agent panel: ask your agent, see what it did, revert it" width="100%">

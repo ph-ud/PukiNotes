@@ -352,6 +352,80 @@ body.resizing-row,body.resizing-row *{cursor:row-resize!important;user-select:no
 #connLost{left:50%;top:16px;transform:translateX(-50%);background:var(--ink);color:#fff;font-size:13px;font-weight:700;padding:8px 14px;border-radius:12px;display:none}
 #connLost.show{display:block}
 .modal .err{color:#b0452c;font-size:13px;font-weight:700;min-height:1.2em;margin:-6px 0 10px}
+
+/* ---- chats (v0.3): several agents on one board ---- */
+.claudebtn{position:relative}
+.claudebtn .cnt{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;padding:0 4px;border-radius:9px;font-size:10.5px;font-weight:800;color:#fff;display:none;place-items:center;border:2px solid var(--panel);box-sizing:content-box;line-height:17px}
+.claudebtn .cnt.busy{display:grid;background:#a26fae;animation:breathe 1.4s ease-in-out infinite}
+.claudebtn .cnt.unr{display:grid;background:var(--accent)}
+@keyframes breathe{50%{transform:scale(1.15)}}
+.rail{display:flex;align-items:center;gap:7px;padding:2px 2px 10px;margin-bottom:8px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.rail .rsp{flex:1}
+.cb{flex:none;width:36px;height:36px;border-radius:50%;position:relative;display:grid;place-items:center;background:var(--c,#f1e6d8);color:#fff;transition:transform .14s var(--ease),filter .14s,box-shadow .14s}
+.cb:hover{transform:translateY(-2px)}
+.cb:active{transform:scale(.92)}
+.cb.on{box-shadow:0 0 0 2px var(--panel),0 0 0 4px var(--ink)}
+.cb .cbf{font-weight:800;font-size:14px}
+.cb .spk{position:absolute;top:-4px;right:-5px;width:17px;height:17px;border-radius:50%;background:#a26fae;color:#fff;font-size:9.5px;display:grid;place-items:center;border:2px solid var(--panel)}
+.cb.s-working::before{content:"";position:absolute;inset:-4px;border-radius:50%;border:2px dashed #a26fae;animation:spin 2.4s linear infinite}
+.cb.s-paused,.cb.s-away{filter:grayscale(.75);opacity:.75}
+.cb .bd{position:absolute;bottom:-4px;right:-5px;min-width:16px;height:16px;border-radius:8px;display:grid;place-items:center;border:2px solid var(--panel);font-size:10px;font-weight:800}
+.cb .bd.q{background:#e0b44c;color:#fff;padding:0 3px}
+.cb .bd.pz{background:var(--muted);color:#fff}
+.cb .bd.pz svg{width:9px;height:9px;stroke:currentColor;stroke-width:3.5;fill:none;stroke-linecap:round}
+.cb .bd.un{background:var(--accent);width:10px;min-width:10px;height:10px;right:-2px;bottom:-2px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.cb.new,.cb.hist{background:#f3ecf6;color:#7d4f8a}
+.cb.hist{background:#f1e6d8;color:var(--muted)}
+.cb.new svg,.cb.hist svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.cb.new.on{background:#a26fae;color:#fff}
+.chathead{display:flex;align-items:center;gap:9px;margin:0 0 8px}
+.chathead:empty{display:none}
+.chathead .hn{flex:1;min-width:0;line-height:1.2}
+.chathead .hn b{display:block;font-size:13.5px}
+.chathead .hn small{display:block;color:var(--muted);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cf{flex:none;width:28px;height:28px;border-radius:50%;color:#fff;font-weight:800;font-size:12px;display:grid;place-items:center}
+.cf.mini{width:22px;height:22px;font-size:10px}
+.cf.ag{background:#a26fae;box-shadow:0 0 0 2px var(--panel),0 0 0 3.5px var(--c)}
+.stt{flex:none;height:24px;min-width:24px;border-radius:12px;display:grid;place-items:center;padding:0 6px;background:#f1e6d8;color:var(--muted)}
+.stt i{width:8px;height:8px;border-radius:50%;background:#5fb36b;box-shadow:0 0 0 3px #dff0e0}
+.stt.s-working{background:#f3ecf6}
+.stt.s-working .dots span{width:5px;height:5px;margin:0 1.5px}
+.stt.s-waiting{background:#fbefd2;color:#b8892a}
+.stt svg,.mk svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.cdone{width:30px;height:30px;color:var(--sage)}
+.cdone svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.cdone:hover{background:var(--sage-soft)!important}
+#chat .row{display:flex;gap:7px;align-items:flex-end;max-width:100%}
+#chat .row.me{justify-content:flex-end}
+#chat .bub{max-width:82%;word-wrap:break-word;position:relative}
+.bub.them{background:#fff;border:1.5px solid var(--line);border-bottom-left-radius:4px}
+.bub.ag{background:#f3ecf6;border-bottom-left-radius:4px}
+.bub.ag.reverted{opacity:.6}
+.bub.ag.live{padding:11px 12px}
+.bub .mk{display:inline-grid;vertical-align:-2px;margin-left:6px;color:var(--muted)}
+.bub .foot{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin-top:7px}
+.tc{width:24px;height:24px;border-radius:7px;display:grid;place-items:center;background:#fff;color:#7d4f8a;transition:transform .12s var(--ease),box-shadow .12s}
+.tc:hover{transform:translateY(-1px) scale(1.08);box-shadow:var(--shadow-sm)}
+.tc svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linejoin:round;stroke-linecap:round}
+.tc.k-sticky svg{fill:var(--tc,#fbe8a6);stroke:#b59a6a}
+.tc.gone{opacity:.4;pointer-events:none}
+.bub .more{font-size:11px;font-weight:800;color:#7d4f8a;padding:0 3px}
+.rvt{margin-left:auto;width:26px;height:24px;border-radius:8px;display:grid;place-items:center;background:#fff;color:var(--accent-2);transition:transform .12s var(--ease),background .12s}
+.rvt:hover{background:var(--accent-soft)}
+.rvt:active{transform:scale(.9)}
+.rvt svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.rvt.did{color:var(--sage);background:none}
+#askPane .chips{display:none}
+#askPane.fresh .chips{display:flex;justify-content:center;gap:8px}
+#askPane.fresh .chips button{font-size:19px;width:44px;height:44px;border-radius:14px;padding:0;display:grid;place-items:center;transition:transform .12s var(--ease),border-color .12s}
+#askPane.fresh .chips button:hover{transform:translateY(-2px)}
+.hello{margin:auto;display:flex;flex-direction:column;align-items:center;gap:10px;opacity:.9;padding:30px 0}
+.spark.big{width:58px;height:58px;border-radius:19px;font-size:28px;box-shadow:0 10px 24px -8px rgba(162,111,174,.6);animation:pop .3s var(--ease)}
+.item.agent-touch{box-shadow:0 0 0 3px color-mix(in srgb,var(--ac) 60%,#a26fae),0 0 24px 4px color-mix(in srgb,#a26fae 35%,transparent)!important;transition:box-shadow .3s}
+.pinwrap.agent-touch .pin{box-shadow:0 0 0 3px #a26fae}
+.item.flash,.pinwrap.flash .pin{outline:3px solid #a26fae;outline-offset:5px}
+g.flash .vis,g.agent-touch .vis{filter:drop-shadow(0 0 4px #a26fae)}
 </style>
 </head>
 <body>
@@ -415,13 +489,14 @@ body.resizing-row,body.resizing-row *{cursor:row-resize!important;user-select:no
 
 <div id="connLost" class="ui">Reconnecting to PukiNotes…</div>
 
-<aside id="claude" class="ui pill" aria-label="Your agent">
+<aside id="claude" class="ui pill" aria-label="Chats with agents">
   <div class="ch-head"><span class="spark">✦</span><div class="bind" id="bindCard"></div><button class="x" id="claudeX" title="Close">×</button></div>
-  <div class="tabs"><button class="on" data-tab="ask" title="Ask">✦</button><button data-tab="hist" title="History: revert anything"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" ><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg></button></div>
+  <div class="rail" id="chatRail"></div>
   <div class="pane" id="askPane">
+    <div class="chathead" id="chatHead"></div>
     <div id="chat"></div>
-    <div class="chips"><button data-ask="Make a budget table for this month">💰 Budget</button><button data-ask="Tidy up the sticky notes">🧹 Tidy up</button><button data-ask="Summarize this board">📝 Summary</button></div>
-    <form id="askForm"><input id="askInput" placeholder="Ask your agent…" autocomplete="off"><button title="Send">↑</button></form>
+    <div class="chips"><button data-ask="Make a budget table for this month" title="Make a budget table for this month">💰</button><button data-ask="Tidy up the sticky notes" title="Tidy up the sticky notes">🧹</button><button data-ask="Summarize this board" title="Summarize this board">📝</button></div>
+    <form id="askForm"><input id="askInput" placeholder="✦" autocomplete="off"><button title="Send">↑</button></form>
   </div>
   <div class="pane" id="histPane" hidden>
     <ol id="histList"></ol>
